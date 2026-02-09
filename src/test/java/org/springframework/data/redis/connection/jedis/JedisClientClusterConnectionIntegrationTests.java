@@ -24,8 +24,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisClusterNode;
+import org.springframework.data.redis.connection.RedisGeoCommands;
+import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.test.condition.EnabledOnRedisClusterAvailable;
 import org.springframework.data.redis.test.extension.JedisExtension;
@@ -33,12 +37,13 @@ import org.springframework.data.redis.test.extension.JedisExtension;
 import redis.clients.jedis.RedisClusterClient;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * Integration tests for {@link JedisClientClusterConnection}.
  * <p>
- * These tests verify that the stub implementation correctly throws {@link UnsupportedOperationException}
- * for unimplemented operations and that basic lifecycle methods work as expected.
+ * These tests verify that the cluster implementation works correctly with RedisClusterClient (Jedis 7.2+).
+ * Tests cover basic operations, cluster-specific commands, and multi-key operations.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -50,6 +55,11 @@ public class JedisClientClusterConnectionIntegrationTests {
 
 	private JedisClientConnectionFactory factory;
 	private JedisClientClusterConnection connection;
+
+	private static final byte[] KEY_1 = "key1".getBytes();
+	private static final byte[] KEY_2 = "key2".getBytes();
+	private static final byte[] VALUE_1 = "value1".getBytes();
+	private static final byte[] VALUE_2 = "value2".getBytes();
 
 	@BeforeEach
 	void setUp() {
@@ -67,6 +77,15 @@ public class JedisClientClusterConnectionIntegrationTests {
 
 	@AfterEach
 	void tearDown() {
+		try {
+			// Clean up test keys
+			if (connection != null && !connection.isClosed()) {
+				connection.serverCommands().flushDb();
+			}
+		} catch (Exception e) {
+			// Ignore cleanup errors
+		}
+
 		if (connection != null && !connection.isClosed()) {
 			connection.close();
 		}
@@ -74,6 +93,10 @@ public class JedisClientClusterConnectionIntegrationTests {
 			factory.destroy();
 		}
 	}
+
+	// ========================================================================
+	// Basic Connection Tests
+	// ========================================================================
 
 	@Test // GH-XXXX
 	void connectionShouldBeCreated() {
@@ -94,63 +117,285 @@ public class JedisClientClusterConnectionIntegrationTests {
 	}
 
 	@Test // GH-XXXX
-	void pingShouldThrowUnsupportedOperationException() {
+	void pingShouldWork() {
+		String result = connection.ping();
+		assertThat(result).isEqualTo("PONG");
+	}
+
+	@Test // GH-XXXX
+	void pingNodeShouldWork() {
 		RedisClusterNode node = new RedisClusterNode(CLUSTER_HOST, MASTER_NODE_1_PORT);
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> connection.ping(node))
-				.withMessageContaining("Cluster operations not yet implemented");
+		String result = connection.ping(node);
+		assertThat(result).isEqualTo("PONG");
+	}
+
+	// ========================================================================
+	// String Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void stringCommandsShouldWork() {
+		assertThat(connection.stringCommands()).isNotNull();
+
+		// Test basic set/get
+		Boolean setResult = connection.stringCommands().set(KEY_1, VALUE_1);
+		assertThat(setResult).isTrue();
+
+		byte[] getValue = connection.stringCommands().get(KEY_1);
+		assertThat(getValue).isEqualTo(VALUE_1);
 	}
 
 	@Test // GH-XXXX
-	void keysShouldThrowUnsupportedOperationException() {
-		RedisClusterNode node = new RedisClusterNode(CLUSTER_HOST, MASTER_NODE_1_PORT);
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> connection.keys(node, "*".getBytes()))
-				.withMessageContaining("Cluster operations not yet implemented");
+	void stringCommandsMultipleKeysShouldWork() {
+		connection.stringCommands().set(KEY_1, VALUE_1);
+		connection.stringCommands().set(KEY_2, VALUE_2);
+
+		assertThat(connection.stringCommands().get(KEY_1)).isEqualTo(VALUE_1);
+		assertThat(connection.stringCommands().get(KEY_2)).isEqualTo(VALUE_2);
+	}
+
+	// ========================================================================
+	// Hash Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void hashCommandsShouldWork() {
+		assertThat(connection.hashCommands()).isNotNull();
+
+		byte[] hashKey = "hash1".getBytes();
+		byte[] field = "field1".getBytes();
+		byte[] value = "hvalue1".getBytes();
+
+		Boolean hsetResult = connection.hashCommands().hSet(hashKey, field, value);
+		assertThat(hsetResult).isTrue();
+
+		byte[] hgetResult = connection.hashCommands().hGet(hashKey, field);
+		assertThat(hgetResult).isEqualTo(value);
+	}
+
+	// ========================================================================
+	// List Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void listCommandsShouldWork() {
+		assertThat(connection.listCommands()).isNotNull();
+
+		byte[] listKey = "list1".getBytes();
+		byte[] value = "lvalue1".getBytes();
+
+		Long lpushResult = connection.listCommands().lPush(listKey, value);
+		assertThat(lpushResult).isEqualTo(1L);
+
+		byte[] lpopResult = connection.listCommands().lPop(listKey);
+		assertThat(lpopResult).isEqualTo(value);
+	}
+
+	// ========================================================================
+	// Set Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void setCommandsShouldWork() {
+		assertThat(connection.setCommands()).isNotNull();
+
+		byte[] setKey = "set1".getBytes();
+		byte[] member = "member1".getBytes();
+
+		Long saddResult = connection.setCommands().sAdd(setKey, member);
+		assertThat(saddResult).isEqualTo(1L);
+
+		Boolean sismemberResult = connection.setCommands().sIsMember(setKey, member);
+		assertThat(sismemberResult).isTrue();
+	}
+
+	// ========================================================================
+	// ZSet Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void zsetCommandsShouldWork() {
+		assertThat(connection.zSetCommands()).isNotNull();
+
+		byte[] zsetKey = "zset1".getBytes();
+		byte[] member = "zmember1".getBytes();
+		double score = 1.5;
+
+		Boolean zaddResult = connection.zSetCommands().zAdd(zsetKey, score, member);
+		assertThat(zaddResult).isTrue();
+
+		Double zscoreResult = connection.zSetCommands().zScore(zsetKey, member);
+		assertThat(zscoreResult).isEqualTo(score);
+	}
+
+	// ========================================================================
+	// Key Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void keyCommandsShouldWork() {
+		assertThat(connection.keyCommands()).isNotNull();
+
+		connection.stringCommands().set(KEY_1, VALUE_1);
+
+		Boolean existsResult = connection.keyCommands().exists(KEY_1);
+		assertThat(existsResult).isTrue();
+
+		Long delResult = connection.keyCommands().del(KEY_1);
+		assertThat(delResult).isEqualTo(1L);
+
+		existsResult = connection.keyCommands().exists(KEY_1);
+		assertThat(existsResult).isFalse();
 	}
 
 	@Test // GH-XXXX
-	void scanShouldThrowUnsupportedOperationException() {
-		RedisClusterNode node = new RedisClusterNode(CLUSTER_HOST, MASTER_NODE_1_PORT);
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> connection.scan(node, ScanOptions.NONE))
-				.withMessageContaining("Cluster operations not yet implemented");
+	void keyCommandsExpireShouldWork() {
+		connection.stringCommands().set(KEY_1, VALUE_1);
+
+		Boolean expireResult = connection.keyCommands().expire(KEY_1, 10);
+		assertThat(expireResult).isTrue();
+
+		Long ttl = connection.keyCommands().ttl(KEY_1);
+		assertThat(ttl).isGreaterThan(0L).isLessThanOrEqualTo(10L);
+	}
+
+	// ========================================================================
+	// Server Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void serverCommandsShouldWork() {
+		assertThat(connection.serverCommands()).isNotNull();
+
+		// Test dbSize - should aggregate across all nodes
+		Long dbSize = connection.serverCommands().dbSize();
+		assertThat(dbSize).isNotNull().isGreaterThanOrEqualTo(0L);
 	}
 
 	@Test // GH-XXXX
-	void randomKeyShouldThrowUnsupportedOperationException() {
-		RedisClusterNode node = new RedisClusterNode(CLUSTER_HOST, MASTER_NODE_1_PORT);
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> connection.randomKey(node))
-				.withMessageContaining("Cluster operations not yet implemented");
+	void serverCommandsInfoShouldWork() {
+		java.util.Properties info = connection.serverCommands().info();
+		assertThat(info).isNotNull().isNotEmpty();
 	}
 
 	@Test // GH-XXXX
-	void executeShouldThrowUnsupportedOperationException() {
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> connection.execute("GET", "key".getBytes(), Arrays.asList("arg".getBytes())))
-				.withMessageContaining("Cluster operations not yet implemented");
+	void serverCommandsFlushDbShouldWork() {
+		connection.stringCommands().set(KEY_1, VALUE_1);
+		assertThat(connection.keyCommands().exists(KEY_1)).isTrue();
+
+		connection.serverCommands().flushDb();
+
+		assertThat(connection.keyCommands().exists(KEY_1)).isFalse();
+	}
+
+	// ========================================================================
+	// Geo Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void geoCommandsShouldWork() {
+		assertThat(connection.geoCommands()).isNotNull();
+
+		byte[] geoKey = "geo1".getBytes();
+		byte[] member = "location1".getBytes();
+
+		Long geoaddResult = connection.geoCommands().geoAdd(geoKey,
+			new RedisGeoCommands.GeoLocation<>(
+				member, new Point(13.361389, 38.115556)));
+		assertThat(geoaddResult).isEqualTo(1L);
+
+		Distance distance = connection.geoCommands().geoDist(geoKey, member, member);
+		assertThat(distance).isNotNull();
+		assertThat(distance.getValue()).isEqualTo(0.0);
+	}
+
+	// ========================================================================
+	// HyperLogLog Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void hyperLogLogCommandsShouldWork() {
+		assertThat(connection.hyperLogLogCommands()).isNotNull();
+
+		byte[] hllKey = "hll1".getBytes();
+		byte[] value = "element1".getBytes();
+
+		Long pfaddResult = connection.hyperLogLogCommands().pfAdd(hllKey, value);
+		assertThat(pfaddResult).isEqualTo(1L);
+
+		Long pfcountResult = connection.hyperLogLogCommands().pfCount(hllKey);
+		assertThat(pfcountResult).isEqualTo(1L);
+	}
+
+	// ========================================================================
+	// Stream Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void streamCommandsShouldWork() {
+		assertThat(connection.streamCommands()).isNotNull();
+
+		byte[] streamKey = "stream1".getBytes();
+		byte[] field = "field1".getBytes();
+		byte[] value = "svalue1".getBytes();
+
+		RecordId recordId =
+			connection.streamCommands().xAdd(streamKey,
+				Collections.singletonMap(field, value));
+		assertThat(recordId).isNotNull();
+
+		Long xlenResult = connection.streamCommands().xLen(streamKey);
+		assertThat(xlenResult).isEqualTo(1L);
+	}
+
+	// ========================================================================
+	// Scripting Commands Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void scriptingCommandsShouldWork() {
+		assertThat(connection.scriptingCommands()).isNotNull();
+
+		byte[] script = "return 'hello'".getBytes();
+
+		@SuppressWarnings("unchecked")
+		byte[] result = connection.scriptingCommands().eval(script,
+			org.springframework.data.redis.connection.ReturnType.VALUE, 0);
+		assertThat(new String(result)).isEqualTo("hello");
+	}
+
+	// ========================================================================
+	// Cluster-Specific Tests
+	// ========================================================================
+
+	@Test // GH-XXXX
+	void clusterGetNodesShouldWork() {
+		Iterable<RedisClusterNode> nodes = connection.clusterGetNodes();
+		assertThat(nodes).isNotNull();
+		assertThat(nodes).isNotEmpty();
+		assertThat(nodes).hasSizeGreaterThanOrEqualTo(3); // At least 3 master nodes
 	}
 
 	@Test // GH-XXXX
-	void geoCommandsShouldThrowUnsupportedOperationException() {
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> connection.geoCommands())
-				.withMessageContaining("Geo commands not yet implemented");
+	void clusterGetSlotForKeyShouldWork() {
+		Integer slot = connection.clusterGetSlotForKey(KEY_1);
+		assertThat(slot).isNotNull();
+		assertThat(slot).isBetween(0, 16383);
 	}
 
 	@Test // GH-XXXX
-	void hashCommandsShouldThrowUnsupportedOperationException() {
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> connection.hashCommands())
-				.withMessageContaining("Hash commands not yet implemented");
+	void clusterGetNodeForSlotShouldWork() {
+		Integer slot = connection.clusterGetSlotForKey(KEY_1);
+		RedisClusterNode node = connection.clusterGetNodeForSlot(slot);
+		assertThat(node).isNotNull();
+		assertThat(node.isMaster()).isTrue();
 	}
 
 	@Test // GH-XXXX
-	void stringCommandsShouldThrowUnsupportedOperationException() {
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> connection.stringCommands())
-				.withMessageContaining("String commands not yet implemented");
+	void clusterGetNodeForKeyShouldWork() {
+		RedisClusterNode node = connection.clusterGetNodeForKey(KEY_1);
+		assertThat(node).isNotNull();
+		assertThat(node.isMaster()).isTrue();
 	}
 }
 
