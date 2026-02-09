@@ -18,6 +18,7 @@ package org.springframework.data.redis.connection.jedis;
 import org.springframework.data.redis.connection.*;
 import redis.clients.jedis.*;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -338,6 +339,44 @@ public class JedisClientConnectionFactory
 		return RedisConfiguration.isClusterConfiguration(configuration);
 	}
 
+	/**
+	 * Returns the client name.
+	 *
+	 * @return the client name.
+	 * @since 3.5
+	 */
+	public @Nullable String getClientName() {
+		return clientConfiguration.getClientName().orElse(null);
+	}
+
+	/**
+	 * Sets the client name used by this connection factory. Defaults to none which does not set a client name.
+	 *
+	 * @param clientName the client name.
+	 * @since 3.5
+	 * @deprecated since 3.5, configure the client name using {@link JedisClientConfiguration}.
+	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
+	 */
+	@Deprecated
+	public void setClientName(String clientName) {
+		this.getMutableConfiguration().setClientName(clientName);
+	}
+
+	/**
+	 * Sets the timeout.
+	 *
+	 * @param timeout the timeout to set.
+	 * @since 3.5
+	 * @deprecated since 3.5, configure the timeout using {@link JedisClientConfiguration}.
+	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
+	 */
+	@Deprecated
+	public void setTimeout(int timeout) {
+
+		getMutableConfiguration().setReadTimeout(Duration.ofMillis(timeout));
+		getMutableConfiguration().setConnectTimeout(Duration.ofMillis(timeout));
+	}
+
 	@Override
 	public int getPhase() {
 		return this.phase;
@@ -580,25 +619,22 @@ public class JedisClientConnectionFactory
 	public RedisConnection getConnection() {
 		assertInitialized();
 
-		RedisConnection connection;
-		JedisClientConfig config = this.clientConfig;
-
 		if (isRedisClusterAware()){
-			connection = getClusterConnection();
-		} else {
-			if (isRedisSentinelAware()) {
-				SentinelConfiguration sentinelConfiguration = getSentinelConfiguration();
-
-				if (sentinelConfiguration != null) {
-					config = createSentinelClientConfig(sentinelConfiguration);
-				}
-			}
-
-			connection = new JedisClientConnection(, config);
+			return getClusterConnection();
 		}
 
+		JedisClientConfig config = this.clientConfig;
 
-		((JedisClientConnection) connection).setConvertPipelineAndTxResults(convertPipelineAndTxResults);
+		if (isRedisSentinelAware()) {
+			SentinelConfiguration sentinelConfiguration = getSentinelConfiguration();
+
+			if (sentinelConfiguration != null) {
+				config = createSentinelClientConfig(sentinelConfiguration);
+			}
+		}
+
+		JedisClientConnection connection = new JedisClientConnection(redisClient, config);
+		connection.setConvertPipelineAndTxResults(convertPipelineAndTxResults);
 
 		return postProcessConnection(connection);
 	}
