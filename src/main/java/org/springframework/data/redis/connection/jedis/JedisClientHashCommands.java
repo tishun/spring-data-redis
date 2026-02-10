@@ -268,7 +268,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		return new KeyBoundCursor<Entry<byte[], byte[]>>(key, cursorId, options) {
 
 			@Override
-			protected ScanIteration<Entry<byte[], byte[]>> doScan(byte[] key, CursorId cursorId, ScanOptions options) {
+			protected ScanIteration<Entry<byte[], byte[]>> doScan(byte @NonNull [] key, @NonNull CursorId cursorId, @NonNull ScanOptions options) {
 
 				if (isQueueing() || isPipelined()) {
 					throw new InvalidDataAccessApiUsageException("'HSCAN' cannot be called in pipeline / transaction mode");
@@ -284,7 +284,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 			@Override
 			protected void doClose() {
 				JedisClientHashCommands.this.connection.close();
-			};
+			}
 
 		}.open();
 	}
@@ -431,7 +431,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 	@Nullable
 	@Override
-	public Long hStrLen(byte[] key, byte[] field) {
+	public Long hStrLen(byte @NonNull [] key, byte @NonNull [] field) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(field, "Field must not be null");

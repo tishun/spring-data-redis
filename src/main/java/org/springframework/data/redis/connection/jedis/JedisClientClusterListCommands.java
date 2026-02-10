@@ -267,7 +267,7 @@ class JedisClientClusterListCommands implements RedisListCommands {
 	}
 
 	@Override
-	public byte[] rPop(byte[] key) {
+	public byte[] rPop(byte @NonNull [] key) {
 
 		Assert.notNull(key, "Key must not be null");
 
@@ -308,7 +308,7 @@ class JedisClientClusterListCommands implements RedisListCommands {
 				.executeMultiKeyCommand(
 						(JedisMultiKeyClusterCommandCallback<List<byte[]>>) (client, key) -> client.blpop(timeout, key),
 						Arrays.asList(keys))
-				.getFirstNonNullNotEmptyOrDefault(Collections.<byte[]> emptyList());
+				.getFirstNonNullNotEmptyOrDefault(Collections.emptyList());
 	}
 
 	@Override
@@ -329,7 +329,7 @@ class JedisClientClusterListCommands implements RedisListCommands {
 				.executeMultiKeyCommand(
 						(JedisMultiKeyClusterCommandCallback<List<byte[]>>) (client, key) -> client.brpop(timeout, key),
 						Arrays.asList(keys))
-				.getFirstNonNullNotEmptyOrDefault(Collections.<byte[]> emptyList());
+				.getFirstNonNullNotEmptyOrDefault(Collections.emptyList());
 	}
 
 	@Override

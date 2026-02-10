@@ -30,13 +30,11 @@ import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisClusterNode;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.connection.stream.RecordId;
-import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.test.condition.EnabledOnRedisClusterAvailable;
 import org.springframework.data.redis.test.extension.JedisExtension;
 
 import redis.clients.jedis.RedisClusterClient;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 /**
@@ -358,7 +356,6 @@ public class JedisClientClusterConnectionIntegrationTests {
 
 		byte[] script = "return 'hello'".getBytes();
 
-		@SuppressWarnings("unchecked")
 		byte[] result = connection.scriptingCommands().eval(script,
 			org.springframework.data.redis.connection.ReturnType.VALUE, 0);
 		assertThat(new String(result)).isEqualTo("hello");

@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  * @author Serhii Siryi
  * @since 2.1
  */
-@SuppressWarnings({ "unchecked", "ConstantConditions" })
+@SuppressWarnings({"ConstantConditions" })
 class JedisClientUtils {
 
 	private static final Set<String> KNOWN_COMMANDS;

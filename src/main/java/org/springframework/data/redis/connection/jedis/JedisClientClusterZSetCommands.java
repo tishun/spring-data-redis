@@ -57,7 +57,7 @@ import org.springframework.util.Assert;
 @NullUnmarked
 class JedisClientClusterZSetCommands implements RedisZSetCommands {
 
-	private static final SetConverter<redis.clients.jedis.resps.Tuple, Tuple> TUPLE_SET_CONVERTER = new SetConverter<>(
+	private static final SetConverter<redis.clients.jedis.resps.Tuple, @NonNull Tuple> TUPLE_SET_CONVERTER = new SetConverter<>(
 			JedisConverters::toTuple);
 
 	private final JedisClientClusterConnection connection;
@@ -213,7 +213,7 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 
 	@Override
 	public Set<Tuple> zRangeByScoreWithScores(byte @NonNull [] key,
-			org.springframework.data.domain.@NonNull Range<? extends Number> range,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
 			org.springframework.data.redis.connection.@NonNull Limit limit) {
 
 		Assert.notNull(key, "Key must not be null");
@@ -237,7 +237,7 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 
 	@Override
 	public Set<byte[]> zRevRangeByScore(byte @NonNull [] key,
-			org.springframework.data.domain.@NonNull Range<? extends Number> range,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
 			org.springframework.data.redis.connection.@NonNull Limit limit) {
 
 		Assert.notNull(key, "Key must not be null");
@@ -261,7 +261,7 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 
 	@Override
 	public Set<Tuple> zRevRangeByScoreWithScores(byte @NonNull [] key,
-			org.springframework.data.domain.@NonNull Range<? extends Number> range,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
 			org.springframework.data.redis.connection.@NonNull Limit limit) {
 
 		Assert.notNull(key, "Key must not be null");
@@ -284,7 +284,7 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 	}
 
 	@Override
-	public Long zCount(byte @NonNull [] key, org.springframework.data.domain.@NonNull Range<? extends Number> range) {
+	public Long zCount(byte @NonNull [] key, org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range cannot be null for ZCOUNT");
@@ -395,7 +395,7 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 
 	@Override
 	public Long zRemRangeByScore(byte @NonNull [] key,
-			org.springframework.data.domain.@NonNull Range<? extends Number> range) {
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range cannot be null for ZREMRANGEBYSCORE");
@@ -415,7 +415,7 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 
 	@Override
 	public Set<@NonNull byte[]> zRangeByScore(byte @NonNull [] key,
-			org.springframework.data.domain.@NonNull Range<? extends Number> range,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
 			org.springframework.data.redis.connection.@NonNull Limit limit) {
 
 		Assert.notNull(key, "Key must not be null");
@@ -545,7 +545,7 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 	@Nullable
 	@Override
 	public Long zRangeStoreByScore(byte @NonNull [] dstKey, byte @NonNull [] srcKey,
-			org.springframework.data.domain.@NonNull Range<? extends Number> range,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
 			org.springframework.data.redis.connection.@NonNull Limit limit) {
 		return zRangeStoreByScore(dstKey, srcKey, range, limit, false);
 	}
@@ -553,13 +553,13 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 	@Nullable
 	@Override
 	public Long zRangeStoreRevByScore(byte @NonNull [] dstKey, byte @NonNull [] srcKey,
-			org.springframework.data.domain.@NonNull Range<? extends Number> range,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
 			org.springframework.data.redis.connection.@NonNull Limit limit) {
 		return zRangeStoreByScore(dstKey, srcKey, range, limit, true);
 	}
 
 	private Long zRangeStoreByScore(byte @NonNull [] dstKey, byte @NonNull [] srcKey,
-			org.springframework.data.domain.@NonNull Range<? extends Number> range,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
 			org.springframework.data.redis.connection.@NonNull Limit limit, boolean rev) {
 
 		Assert.notNull(dstKey, "Destination key must not be null");

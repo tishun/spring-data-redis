@@ -15,6 +15,7 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
 
@@ -180,7 +181,7 @@ class JedisClientClusterSetCommands implements RedisSetCommands {
 
 		Collection<Set<byte[]>> resultList = connection.getClusterCommandExecutor()
 				.executeMultiKeyCommand(
-						(JedisMultiKeyClusterCommandCallback<Set<byte[]>>) (client, key) -> client.smembers(key),
+						(JedisMultiKeyClusterCommandCallback<Set<byte[]>>) Jedis::smembers,
 						Arrays.asList(keys))
 				.resultsAsList();
 
@@ -324,7 +325,7 @@ class JedisClientClusterSetCommands implements RedisSetCommands {
 			ByteArraySet values = new ByteArraySet(sMembers(source));
 			Collection<Set<byte[]>> resultList = connection.getClusterCommandExecutor()
 					.executeMultiKeyCommand(
-							(JedisMultiKeyClusterCommandCallback<Set<byte[]>>) (client, key) -> client.smembers(key),
+							(JedisMultiKeyClusterCommandCallback<Set<byte[]>>) Jedis::smembers,
 							Arrays.asList(others))
 					.resultsAsList();
 

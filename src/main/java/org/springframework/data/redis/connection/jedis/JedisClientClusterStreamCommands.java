@@ -33,7 +33,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.Limit;
 import org.springframework.data.redis.connection.RedisStreamCommands;
-import org.springframework.data.redis.connection.RedisStreamCommands.StreamEntryDeletionResult;
 import org.springframework.data.redis.connection.stream.ByteRecord;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -97,7 +96,7 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 		Assert.notNull(group, "Group must not be null");
 		Assert.notNull(newOwner, "NewOwner must not be null");
 
-		long minIdleTime = options.getMinIdleTime() == null ? -1L : options.getMinIdleTime().toMillis();
+		long minIdleTime = options.getMinIdleTime().toMillis();
 
 		XClaimParams xClaimParams = StreamConverters.toXClaimParams(options);
 		try {
@@ -121,7 +120,7 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 		Assert.notNull(group, "Group must not be null");
 		Assert.notNull(newOwner, "NewOwner must not be null");
 
-		long minIdleTime = options.getMinIdleTime() == null ? -1L : options.getMinIdleTime().toMillis();
+		long minIdleTime = options.getMinIdleTime().toMillis();
 
 		XClaimParams xClaimParams = StreamConverters.toXClaimParams(options);
 		try {

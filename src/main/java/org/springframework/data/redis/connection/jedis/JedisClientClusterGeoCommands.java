@@ -164,7 +164,7 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 	}
 
 	@Override
-	public GeoResults<GeoLocation<byte[]>> geoRadius(byte @NonNull [] key, @NonNull Circle within) {
+	public GeoResults<@NonNull GeoLocation<byte[]>> geoRadius(byte @NonNull [] key, @NonNull Circle within) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(within, "Within must not be null");
@@ -179,8 +179,8 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 	}
 
 	@Override
-	public GeoResults<GeoLocation<byte[]>> geoRadius(byte @NonNull [] key, @NonNull Circle within,
-			@NonNull GeoRadiusCommandArgs args) {
+	public GeoResults<@NonNull GeoLocation<byte[]>> geoRadius(byte @NonNull [] key, @NonNull Circle within,
+                                                              @NonNull GeoRadiusCommandArgs args) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(within, "Within must not be null");
@@ -199,8 +199,8 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 	}
 
 	@Override
-	public GeoResults<GeoLocation<byte[]>> geoRadiusByMember(byte @NonNull [] key, byte @NonNull [] member,
-			@NonNull Distance radius) {
+	public GeoResults<@NonNull GeoLocation<byte[]>> geoRadiusByMember(byte @NonNull [] key, byte @NonNull [] member,
+                                                                      @NonNull Distance radius) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(member, "Member must not be null");
@@ -216,8 +216,8 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 	}
 
 	@Override
-	public GeoResults<GeoLocation<byte[]>> geoRadiusByMember(byte @NonNull [] key, byte @NonNull [] member,
-			@NonNull Distance radius, @NonNull GeoRadiusCommandArgs args) {
+	public GeoResults<@NonNull GeoLocation<byte[]>> geoRadiusByMember(byte @NonNull [] key, byte @NonNull [] member,
+                                                                      @NonNull Distance radius, @NonNull GeoRadiusCommandArgs args) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(member, "Member must not be null");
@@ -242,8 +242,8 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 	}
 
 	@Override
-	public GeoResults<GeoLocation<byte[]>> geoSearch(byte @NonNull [] key, @NonNull GeoReference<byte[]> reference,
-			@NonNull GeoShape predicate, @NonNull GeoSearchCommandArgs args) {
+	public GeoResults<@NonNull GeoLocation<byte[]>> geoSearch(byte @NonNull [] key, @NonNull GeoReference<byte[]> reference,
+                                                              @NonNull GeoShape predicate, @NonNull GeoSearchCommandArgs args) {
 
 		Assert.notNull(key, "Key must not be null");
 		GeoSearchParam params = JedisConverters.toGeoSearchParams(reference, predicate, args);

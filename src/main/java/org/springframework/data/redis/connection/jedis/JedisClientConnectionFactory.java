@@ -102,7 +102,7 @@ public class JedisClientConnectionFactory
 	 * Lifecycle state of this factory.
 	 */
 	enum State {
-		CREATED, STARTING, STARTED, STOPPING, STOPPED, DESTROYED;
+		CREATED, STARTING, STARTED, STOPPING, STOPPED, DESTROYED
 	}
 
 	/**
@@ -624,6 +624,7 @@ public class JedisClientConnectionFactory
 		}
 
 		JedisClientConfig config = this.clientConfig;
+		redis.clients.jedis.UnifiedJedis client;
 
 		if (isRedisSentinelAware()) {
 			SentinelConfiguration sentinelConfiguration = getSentinelConfiguration();
@@ -631,9 +632,13 @@ public class JedisClientConnectionFactory
 			if (sentinelConfiguration != null) {
 				config = createSentinelClientConfig(sentinelConfiguration);
 			}
+
+			client = getRequiredSentinelClient();
+		} else {
+			client = getRequiredRedisClient();
 		}
 
-		JedisClientConnection connection = new JedisClientConnection(redisClient, config);
+		JedisClientConnection connection = new JedisClientConnection(client, config);
 		connection.setConvertPipelineAndTxResults(convertPipelineAndTxResults);
 
 		return postProcessConnection(connection);
@@ -671,12 +676,33 @@ public class JedisClientConnectionFactory
 			throw new InvalidDataAccessResourceUsageException("No Sentinels configured");
 		}
 
-		return new JedisClientSentinelConnection(getRequiredSentinelClient());
+		RedisSentinelConfiguration config = getSentinelConfiguration();
+
+		if (config == null || config.getSentinels().isEmpty()) {
+			throw new InvalidDataAccessResourceUsageException("No Sentinels configured");
+		}
+
+		// Get the first sentinel node and create a Jedis connection to it
+		RedisNode sentinel = config.getSentinels().iterator().next();
+
+		return new JedisSentinelConnection(sentinel);
 	}
 
 	@Override
 	public @Nullable DataAccessException translateExceptionIfPossible(RuntimeException ex) {
 		return EXCEPTION_TRANSLATION.translate(ex);
+	}
+
+	@SuppressWarnings("NullAway")
+	private RedisClient getRequiredRedisClient() {
+
+		RedisClient client = this.redisClient;
+
+		if (client == null) {
+			throw new IllegalStateException("RedisClient is not initialized");
+		}
+
+		return client;
 	}
 
 	@SuppressWarnings("NullAway")
@@ -765,10 +791,8 @@ public class JedisClientConnectionFactory
 
 		Set<HostAndPort> convertedNodes = new LinkedHashSet<>(nodes.size());
 		for (RedisNode node : nodes) {
-			if (node != null) {
-				convertedNodes.add(JedisConverters.toHostAndPort(node));
-			}
-		}
+            convertedNodes.add(JedisConverters.toHostAndPort(node));
+        }
 		return convertedNodes;
 	}
 
@@ -787,10 +811,8 @@ public class JedisClientConnectionFactory
 
 		Set<HostAndPort> convertedNodes = new LinkedHashSet<>(nodes.size());
 		for (RedisNode node : nodes) {
-			if (node != null) {
-				convertedNodes.add(JedisConverters.toHostAndPort(node));
-			}
-		}
+            convertedNodes.add(JedisConverters.toHostAndPort(node));
+        }
 		return convertedNodes;
 	}
 }

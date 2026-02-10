@@ -17,13 +17,8 @@ package org.springframework.data.redis.connection.jedis;
 
 import redis.clients.jedis.Jedis;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.jspecify.annotations.NonNull;
@@ -85,7 +80,7 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 			return null;
 		}
 
-		Collections.sort(result, Collections.reverseOrder());
+		result.sort(Collections.reverseOrder());
 		return result.get(0);
 	}
 
@@ -172,12 +167,12 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 
 		Properties infos = new Properties();
 
-		List<NodeResult<Properties>> nodeResults = connection.getClusterCommandExecutor()
+		List<NodeResult<@NonNull Properties>> nodeResults = connection.getClusterCommandExecutor()
 				.executeCommandOnAllNodes(
 						(JedisClusterCommandCallback<Properties>) client -> JedisConverters.toProperties(client.info()))
 				.getResults();
 
-		for (NodeResult<Properties> nodeProperties : nodeResults) {
+		for (NodeResult<@NonNull Properties> nodeProperties : nodeResults) {
 			for (Entry<Object, Object> entry : nodeProperties.getValue().entrySet()) {
 				infos.put(nodeProperties.getNode().asString() + "." + entry.getKey(), entry.getValue());
 			}
@@ -382,7 +377,7 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 	public List<@NonNull RedisClientInfo> getClientList(@NonNull RedisClusterNode node) {
 
 		return JedisConverters
-				.toListOfRedisClientInformation(executeCommandOnSingleNode(Jedis::clientList, node).getValue());
+				.toListOfRedisClientInformation(Objects.requireNonNull(executeCommandOnSingleNode(Jedis::clientList, node).getValue()));
 	}
 
 	@Override
@@ -426,12 +421,12 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 		return Converters.toTimeMillis(serverTimeInformation.get(0), serverTimeInformation.get(1), timeUnit);
 	}
 
-	private <T> NodeResult<T> executeCommandOnSingleNode(@NonNull JedisClusterCommandCallback<T> cmd,
-			@NonNull RedisClusterNode node) {
+	private <T> NodeResult<@NonNull T> executeCommandOnSingleNode(@NonNull JedisClusterCommandCallback<T> cmd,
+                                                                  @NonNull RedisClusterNode node) {
 		return connection.getClusterCommandExecutor().executeCommandOnSingleNode(cmd, node);
 	}
 
-	private <T> MultiNodeResult<T> executeCommandOnAllNodes(@NonNull JedisClusterCommandCallback<T> cmd) {
+	private <T> MultiNodeResult<@NonNull T> executeCommandOnAllNodes(@NonNull JedisClusterCommandCallback<T> cmd) {
 		return connection.getClusterCommandExecutor().executeCommandOnAllNodes(cmd);
 	}
 

@@ -16,7 +16,6 @@
 package org.springframework.data.redis.connection.jedis;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisCluster;
 
 import java.util.List;
 

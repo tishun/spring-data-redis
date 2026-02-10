@@ -258,11 +258,10 @@ class JedisClientSetCommands implements RedisSetCommands {
 	}
 
 	/**
-	 * @param key
-	 * @param cursorId
-	 * @param options
-	 * @return
-	 * @since 3.2.1
+	 * @param key the key to scan
+	 * @param cursorId the {@link CursorId} to use
+	 * @param options the {@link ScanOptions} to use
+	 * @return a new {@link Cursor} responsible for the provided {@link CursorId} and {@link ScanOptions}
 	 */
 	public Cursor<byte @NonNull []> sScan(byte @NonNull [] key, @NonNull CursorId cursorId,
 			@NonNull ScanOptions options) {
@@ -287,7 +286,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 
 			protected void doClose() {
 				JedisClientSetCommands.this.connection.close();
-			};
+			}
 		}.open();
 	}
 

@@ -15,6 +15,8 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
+import redis.clients.jedis.PipeliningBase;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.args.ExpiryOption;
 import redis.clients.jedis.params.RestoreParams;
 import redis.clients.jedis.params.ScanParams;
@@ -147,22 +149,21 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 	}
 
 	@Override
-	public Cursor<byte @NonNull []> scan(@NonNull ScanOptions options) {
-		return scan(CursorId.initial(), options != null ? options : ScanOptions.NONE);
+	public Cursor<byte @NonNull []> scan(ScanOptions options) {
+		return scan(CursorId.initial(), options);
 	}
 
 	/**
-	 * @since 1.4
-	 * @param cursorId
-	 * @param options
-	 * @return
+	 * @param cursorId the {@link CursorId} to use
+	 * @param options the {@link ScanOptions} to use
+	 * @return a new {@link Cursor} responsible for hte provided {@link CursorId} and {@link ScanOptions}
 	 */
 	public Cursor<byte @NonNull []> scan(@NonNull CursorId cursorId, @NonNull ScanOptions options) {
 
 		return new ScanCursor<byte[]>(cursorId, options) {
 
 			@Override
-			protected ScanIteration<byte[]> doScan(CursorId cursorId, ScanOptions options) {
+			protected ScanIteration<byte[]> doScan(@NonNull CursorId cursorId, @NonNull ScanOptions options) {
 
 				if (isQueueing() || isPipelined()) {
 					throw new InvalidDataAccessApiUsageException("'SCAN' cannot be called in pipeline / transaction mode");
@@ -198,9 +199,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 	@Override
 	public byte[] randomKey() {
-		return connection.execute(
-				client -> client.randomBinaryKey(),
-				pipeline -> pipeline.randomBinaryKey());
+		return connection.execute(UnifiedJedis::randomBinaryKey, PipeliningBase::randomBinaryKey);
 	}
 
 	@Override
@@ -324,7 +323,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(key, "Key must not be null");
 
 		Long result = (Long) connection.execute("MOVE", key, JedisConverters.toBytes(String.valueOf(dbIndex)));
-		return result != null ? JedisConverters.toBoolean(result) : false;
+		return JedisConverters.toBoolean(result);
 	}
 
 	@Override

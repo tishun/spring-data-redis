@@ -44,19 +44,21 @@ import java.util.function.Supplier;
 
 /**
  * {@code RedisConnection} implementation on top of <a href="https://github.com/redis/jedis">Jedis</a> 7.2+ library
- * using the {@link RedisClient} API.
+ * using the {@link UnifiedJedis} API.
  * <p>
  * This class is not Thread-safe and instances should not be shared across threads.
  * <p>
  * This implementation reuses the existing command classes from the legacy {@link JedisConnection} implementation,
  * providing full support for all Redis commands, pipelining, transactions, and pub/sub.
  * <p>
- * Note: {@link RedisClient} extends {@code UnifiedJedis}, which allows it to be safely cast to {@link Jedis}
- * for command execution, enabling code reuse with the existing command infrastructure.
+ * Supports {@link RedisClient} for standalone connections, {@link RedisSentinelClient} for sentinel-managed
+ * connections, and other {@link UnifiedJedis} implementations.
  *
  * @author Tihomir Mateev
  * @since 3.5
+ * @see UnifiedJedis
  * @see RedisClient
+ * @see RedisSentinelClient
  * @see JedisConnection
  */
 @NullUnmarked
@@ -67,11 +69,9 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 	private boolean convertPipelineAndTxResults = true;
 
-	private final RedisClient redisClient;
+	private final UnifiedJedis client;
 
-	private final JedisClientConfig clientConfig;
-
-	private volatile @Nullable JedisSubscription subscription;
+    private volatile @Nullable JedisSubscription subscription;
 
 	private final JedisClientGeoCommands geoCommands = new JedisClientGeoCommands(this);
 	private final JedisClientHashCommands hashCommands = new JedisClientHashCommands(this);
@@ -87,34 +87,33 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 	private final Log log = LogFactory.getLog(getClass());
 
-	@SuppressWarnings("rawtypes") private List<JedisResult> pipelinedResults = new ArrayList<>();
+	@SuppressWarnings("rawtypes") private final List<JedisResult> pipelinedResults = new ArrayList<>();
 
-	private Queue<FutureResult<Response<?>>> txResults = new LinkedList<>();
+	private final Queue<FutureResult<@NonNull Response<?>>> txResults = new LinkedList<>();
 
-	private volatile @Nullable Pipeline pipeline;
+	private volatile @Nullable AbstractPipeline pipeline;
 
 	private volatile @Nullable AbstractTransaction transaction;
 
-	public JedisClientConnection(@NonNull RedisClient redisClient) {
-		this(redisClient, DefaultJedisClientConfig.builder().build());
+	public JedisClientConnection(@NonNull UnifiedJedis client) {
+		this(client, DefaultJedisClientConfig.builder().build());
 	}
 
-	public JedisClientConnection(@NonNull RedisClient redisClient, int dbIndex) {
-		this(redisClient, dbIndex, null);
+	public JedisClientConnection(@NonNull UnifiedJedis client, int dbIndex) {
+		this(client, dbIndex, null);
 	}
 
-	public JedisClientConnection(@NonNull RedisClient redisClient, int dbIndex, @Nullable String clientName) {
-		this(redisClient, createConfig(dbIndex, clientName));
+	public JedisClientConnection(@NonNull UnifiedJedis client, int dbIndex, @Nullable String clientName) {
+		this(client, createConfig(dbIndex, clientName));
 	}
 
-	public JedisClientConnection(@NonNull RedisClient redisClient, @NonNull JedisClientConfig clientConfig) {
+	public JedisClientConnection(@NonNull UnifiedJedis client, @NonNull JedisClientConfig clientConfig) {
 
-		Assert.notNull(redisClient, "RedisClient must not be null");
+		Assert.notNull(client, "UnifiedJedis client must not be null");
 		Assert.notNull(clientConfig, "JedisClientConfig must not be null");
 
-		this.redisClient = redisClient;
-		this.clientConfig = clientConfig;
-	}
+		this.client = client;
+    }
 
 	private static DefaultJedisClientConfig createConfig(int dbIndex, @Nullable String clientName) {
 		return DefaultJedisClientConfig.builder().database(dbIndex).clientName(clientName).build();
@@ -123,15 +122,15 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	/**
 	 * Execute a Redis command with identity conversion (no transformation).
 	 *
-	 * @param directFunction function to execute in direct mode on RedisClient
+	 * @param directFunction function to execute in direct mode on UnifiedJedis
 	 * @param pipelineFunction function to execute in pipelined/transactional mode on PipeliningBase
 	 * @param <T> the result type
 	 * @return the command result, or null in pipelined/transactional mode
 	 */
-	<T> @Nullable T execute(Function<RedisClient, T> directFunction,
+	<T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
 			Function<PipeliningBase, Response<T>> pipelineFunction) {
 
-		return doWithRedisClient(client -> {
+		return doWithClient(c -> {
 
 			if (isQueueing()) {
 				Response<T> response = pipelineFunction.apply(getRequiredTransaction());
@@ -146,7 +145,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 			}
 
 			// Direct execution
-			return directFunction.apply(client);
+			return directFunction.apply(c);
 		});
 	}
 
@@ -154,15 +153,15 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	 * Execute a Redis command that returns a status response.
 	 * Status responses are handled specially and not included in transactional results.
 	 *
-	 * @param directFunction function to execute in direct mode on RedisClient
+	 * @param directFunction function to execute in direct mode on UnifiedJedis
 	 * @param pipelineFunction function to execute in pipelined/transactional mode on PipeliningBase
 	 * @param <T> the result type
 	 * @return the command result, or null in pipelined/transactional mode
 	 */
-	<T> @Nullable T executeStatus(Function<RedisClient, T> directFunction,
+	<T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
 			Function<PipeliningBase, Response<T>> pipelineFunction) {
 
-		return doWithRedisClient(client -> {
+		return doWithClient(c -> {
 
 			if (isQueueing()) {
 				Response<T> response = pipelineFunction.apply(getRequiredTransaction());
@@ -177,24 +176,24 @@ public class JedisClientConnection extends AbstractRedisConnection {
 			}
 
 			// Direct execution
-			return directFunction.apply(client);
+			return directFunction.apply(c);
 		});
 	}
 
 	/**
 	 * Execute a command with a custom converter.
 	 *
-	 * @param directFunction function to execute in direct mode on RedisClient
+	 * @param directFunction function to execute in direct mode on UnifiedJedis
 	 * @param pipelineFunction function to execute in pipelined/transactional mode on PipeliningBase
 	 * @param converter converter to transform the result
 	 * @param <S> the source type
 	 * @param <T> the target type
 	 * @return the converted command result, or null in pipelined/transactional mode
 	 */
-	<S, T> @Nullable T execute(Function<RedisClient, S> directFunction,
+	<S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
 			Function<PipeliningBase, Response<S>> pipelineFunction, Converter<S, T> converter) {
 
-		return doWithRedisClient(client -> {
+		return doWithClient(c -> {
 
 			if (isQueueing()) {
 				Response<S> response = pipelineFunction.apply(getRequiredTransaction());
@@ -209,7 +208,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 			}
 
 			// Direct execution
-			S result = directFunction.apply(client);
+			S result = directFunction.apply(c);
 			return result != null ? converter.convert(result) : null;
 		});
 	}
@@ -291,7 +290,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		Assert.hasText(command, "A valid command needs to be specified");
 		Assert.notNull(args, "Arguments must not be null");
 
-		return doWithRedisClient(client -> {
+		return doWithClient(c -> {
 
 			ProtocolCommand protocolCommand = () -> JedisConverters.toBytes(command);
 
@@ -308,7 +307,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 				return null;
 			}
 
-			return client.sendCommand(protocolCommand, args);
+			return c.sendCommand(protocolCommand, args);
 		});
 	}
 
@@ -320,7 +319,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		JedisSubscription subscription = this.subscription;
 
 		if (subscription != null) {
-			doExceptionThrowingOperationSafely(subscription::close, "Cannot terminate subscription");
+			doExceptionThrowingOperationSafely(subscription::close);
 			this.subscription = null;
 		}
 
@@ -328,13 +327,13 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	}
 
 	@Override
-	public RedisClient getNativeConnection() {
-		return this.redisClient;
+	public UnifiedJedis getNativeConnection() {
+		return this.client;
 	}
 
 	@Override
 	public boolean isClosed() {
-		// RedisClient doesn't expose connection state directly
+		// UnifiedJedis doesn't expose connection state directly
 		// We rely on the factory to manage the lifecycle
 		return false;
 	}
@@ -357,7 +356,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		}
 
 		if (pipeline == null) {
-			pipeline = redisClient.pipelined();
+			pipeline = client.pipelined();
 		}
 	}
 
@@ -417,13 +416,13 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		}
 	}
 
-	void transaction(@NonNull FutureResult<Response<?>> result) {
+	void transaction(@NonNull FutureResult<@NonNull Response<?>> result) {
 		txResults.add(result);
 	}
 
 	@Override
 	public void select(int dbIndex) {
-		doWithRedisClient((Consumer<RedisClient>) client -> client.sendCommand(Protocol.Command.SELECT, String.valueOf(dbIndex)));
+		doWithClient((Consumer<UnifiedJedis>) c -> c.sendCommand(Protocol.Command.SELECT, String.valueOf(dbIndex)));
 	}
 
 	@Override
@@ -431,12 +430,12 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		Assert.notNull(message, "Message must not be null");
 
-		return doWithRedisClient(client -> (byte[]) client.sendCommand(Protocol.Command.ECHO, message));
+		return doWithClient(c -> (byte[]) c.sendCommand(Protocol.Command.ECHO, message));
 	}
 
 	@Override
 	public String ping() {
-		return doWithRedisClient(RedisClient::ping);
+		return doWithClient(UnifiedJedis::ping);
 	}
 
 	/**
@@ -448,13 +447,13 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		this.convertPipelineAndTxResults = convertPipelineAndTxResults;
 	}
 
-	public @Nullable Pipeline getPipeline() {
+	public @Nullable AbstractPipeline getPipeline() {
 		return this.pipeline;
 	}
 
-	public Pipeline getRequiredPipeline() {
+	public AbstractPipeline getRequiredPipeline() {
 
-		Pipeline pipeline = getPipeline();
+		AbstractPipeline pipeline = getPipeline();
 
 		Assert.state(pipeline != null, "Connection has no active pipeline");
 
@@ -475,45 +474,45 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	}
 
 	/**
-	 * Returns the underlying {@link RedisClient} instance.
+	 * Returns the underlying {@link UnifiedJedis} client instance.
 	 * <p>
-	 * Note: RedisClient extends UnifiedJedis, so it can be safely cast to Jedis for command execution.
+	 * This can be a {@link RedisClient}, {@link RedisSentinelClient}, or other {@link UnifiedJedis} implementation.
 	 *
-	 * @return the {@link RedisClient} instance. Never {@literal null}.
+	 * @return the {@link UnifiedJedis} instance. Never {@literal null}.
 	 */
 	@NonNull
-	public RedisClient getRedisClient() {
-		return this.redisClient;
+	public UnifiedJedis getRedisClient() {
+		return this.client;
 	}
 
 	/**
-	 * Returns the underlying {@link RedisClient} instance.
+	 * Returns the underlying {@link UnifiedJedis} client instance.
 	 * <p>
-	 * Note: {@link RedisClient} extends {@link UnifiedJedis}, not {@link Jedis}.
 	 * This method is used by SCAN operations in command classes.
+	 * This can be a {@link RedisClient}, {@link RedisSentinelClient}, or other {@link UnifiedJedis} implementation.
 	 *
-	 * @return the {@link RedisClient}. Never {@literal null}.
+	 * @return the {@link UnifiedJedis} client. Never {@literal null}.
 	 */
 	@NonNull
-	public RedisClient getJedis() {
-		return this.redisClient;
+	public UnifiedJedis getJedis() {
+		return this.client;
 	}
 
 
 
-	<T> JedisResult<T, T> newJedisResult(Response<T> response) {
+	<T> JedisResult<@NonNull T, @NonNull T> newJedisResult(Response<T> response) {
 		return JedisResultBuilder.<T, T> forResponse(response)
 				.convertPipelineAndTxResults(convertPipelineAndTxResults)
 				.build();
 	}
 
-	<T, R> JedisResult<T, R> newJedisResult(Response<T> response, Converter<T, R> converter, Supplier<R> defaultValue) {
+	<T, R> JedisResult<@NonNull T, @NonNull R> newJedisResult(Response<T> response, Converter<T, R> converter, Supplier<R> defaultValue) {
 
 		return JedisResultBuilder.<T, R> forResponse(response).mappedWith(converter)
 				.convertPipelineAndTxResults(convertPipelineAndTxResults).mapNullTo(defaultValue).build();
 	}
 
-	<T> JedisStatusResult<T, T> newStatusResult(Response<T> response) {
+	<T> JedisStatusResult<@NonNull T, @NonNull T> newStatusResult(Response<T> response) {
 		return JedisResultBuilder.<T, T> forResponse(response).buildStatusResult();
 	}
 
@@ -528,7 +527,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		throw new UnsupportedOperationException("Sentinel is not supported by JedisClientConnection");
 	}
 
-	private @Nullable <T> T doWithRedisClient(@NonNull Function<@NonNull RedisClient, T> callback) {
+	private @Nullable <T> T doWithClient(@NonNull Function<@NonNull UnifiedJedis, T> callback) {
 
 		try {
 			return callback.apply(getRedisClient());
@@ -537,7 +536,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		}
 	}
 
-	private void doWithRedisClient(@NonNull Consumer<@NonNull RedisClient> callback) {
+	private void doWithClient(@NonNull Consumer<@NonNull UnifiedJedis> callback) {
 
 		try {
 			callback.accept(getRedisClient());
@@ -546,11 +545,11 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		}
 	}
 
-	private void doExceptionThrowingOperationSafely(Runnable operation, String errorMessage) {
+	private void doExceptionThrowingOperationSafely(Runnable operation) {
 		try {
 			operation.run();
 		} catch (Exception ex) {
-			log.warn(errorMessage, ex);
+			log.warn("Cannot terminate subscription", ex);
 		}
 	}
 
@@ -560,7 +559,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 	@Override
 	public Long publish(byte @NonNull [] channel, byte @NonNull [] message) {
-		return doWithRedisClient((Function<RedisClient, Long>) client -> client.publish(channel, message));
+		return doWithClient((Function<UnifiedJedis, Long>) c -> c.publish(channel, message));
 	}
 
 	@Override
@@ -584,7 +583,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		try {
 			BinaryJedisPubSub jedisPubSub = new JedisMessageListener(listener);
 			subscription = new JedisSubscription(listener, jedisPubSub, channels, null);
-			redisClient.subscribe(jedisPubSub, channels);
+			client.subscribe(jedisPubSub, channels);
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -601,7 +600,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		try {
 			BinaryJedisPubSub jedisPubSub = new JedisMessageListener(listener);
 			subscription = new JedisSubscription(listener, jedisPubSub, null, patterns);
-			redisClient.psubscribe(jedisPubSub, patterns);
+			client.psubscribe(jedisPubSub, patterns);
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -622,8 +621,8 @@ public class JedisClientConnection extends AbstractRedisConnection {
 			throw new InvalidDataAccessApiUsageException("Cannot use Transaction while a pipeline is open");
 		}
 
-		doWithRedisClient(client -> {
-			this.transaction = client.multi();
+		doWithClient(c -> {
+			this.transaction = c.multi();
 		});
 	}
 
@@ -670,12 +669,12 @@ public class JedisClientConnection extends AbstractRedisConnection {
 			throw new InvalidDataAccessApiUsageException("WATCH is not supported when a transaction is active");
 		}
 
-		doWithRedisClient((Consumer<RedisClient>) client -> client.sendCommand(Protocol.Command.WATCH, keys));
+		doWithClient((Consumer<UnifiedJedis>) c -> c.sendCommand(Protocol.Command.WATCH, keys));
 	}
 
 	@Override
 	public void unwatch() {
-		doWithRedisClient((Consumer<RedisClient>) client -> client.sendCommand(Protocol.Command.UNWATCH));
+		doWithClient((Consumer<UnifiedJedis>) c -> c.sendCommand(Protocol.Command.UNWATCH));
 	}
 }
 

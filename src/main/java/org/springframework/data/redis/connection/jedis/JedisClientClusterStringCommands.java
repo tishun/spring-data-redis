@@ -215,7 +215,7 @@ class JedisClientClusterStringCommands implements RedisStringCommands {
 
 		Assert.notNull(tuples, "Tuples must not be null");
 
-		if (ClusterSlotHashUtil.isSameSlotForAllKeys(tuples.keySet().toArray(new byte[tuples.keySet().size()][]))) {
+		if (ClusterSlotHashUtil.isSameSlotForAllKeys(tuples.keySet().toArray(new byte[tuples.size()][]))) {
 			try {
 				return Converters.stringToBoolean(connection.getClusterClient().mset(JedisConverters.toByteArrays(tuples)));
 			} catch (Exception ex) {
@@ -237,7 +237,7 @@ class JedisClientClusterStringCommands implements RedisStringCommands {
 
 		Assert.notNull(tuples, "Tuples must not be null");
 
-		if (ClusterSlotHashUtil.isSameSlotForAllKeys(tuples.keySet().toArray(new byte[tuples.keySet().size()][]))) {
+		if (ClusterSlotHashUtil.isSameSlotForAllKeys(tuples.keySet().toArray(new byte[tuples.size()][]))) {
 			try {
 				return JedisConverters.toBoolean(connection.getClusterClient().msetnx(JedisConverters.toByteArrays(tuples)));
 			} catch (Exception ex) {
@@ -436,7 +436,7 @@ class JedisClientClusterStringCommands implements RedisStringCommands {
 	}
 
 	@Override
-	public Long bitPos(byte @NonNull [] key, boolean bit, @NonNull Range<Long> range) {
+	public Long bitPos(byte @NonNull [] key, boolean bit, @NonNull Range<@NonNull Long> range) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range must not be null Use Range.unbounded() instead");
@@ -445,13 +445,13 @@ class JedisClientClusterStringCommands implements RedisStringCommands {
 		args.add(LettuceConverters.toBit(bit));
 
 		if (range.getLowerBound().isBounded()) {
-			args.add(range.getLowerBound().getValue().map(LettuceConverters::toBytes).get());
+			args.add(range.getLowerBound().getValue().map(LettuceConverters::toBytes).orElseGet(() -> new byte[0]));
 		}
 		if (range.getUpperBound().isBounded()) {
-			args.add(range.getUpperBound().getValue().map(LettuceConverters::toBytes).get());
+			args.add(range.getUpperBound().getValue().map(LettuceConverters::toBytes).orElseGet(() -> new byte[0]));
 		}
 
-		return Long.class.cast(connection.execute("BITPOS", key, args));
+		return connection.execute("BITPOS", key, args);
 	}
 
 	@Override

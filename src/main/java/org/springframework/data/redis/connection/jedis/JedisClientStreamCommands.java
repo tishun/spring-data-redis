@@ -36,7 +36,6 @@ import org.jspecify.annotations.NullUnmarked;
 import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.Limit;
 import org.springframework.data.redis.connection.RedisStreamCommands;
-import org.springframework.data.redis.connection.jedis.JedisInvoker.ResponseCommands;
 import org.springframework.data.redis.connection.stream.ByteRecord;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.MapRecord;
@@ -311,7 +310,7 @@ class JedisClientStreamCommands implements RedisStreamCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(groupName, "GroupName must not be null");
 
-		Range<String> range = (Range<String>) options.getRange();
+		Range<@NonNull String> range = (Range<String>) options.getRange();
 		XPendingParams xPendingParams = StreamConverters.toXPendingParams(options);
 
 		Object result = connection.execute(
@@ -323,7 +322,7 @@ class JedisClientStreamCommands implements RedisStreamCommands {
 	}
 
 	@Override
-	public List<@NonNull ByteRecord> xRange(byte @NonNull [] key, @NonNull Range<String> range, @NonNull Limit limit) {
+	public List<@NonNull ByteRecord> xRange(byte @NonNull [] key, @NonNull Range<@NonNull String> range, @NonNull Limit limit) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range must not be null");
@@ -356,9 +355,10 @@ class JedisClientStreamCommands implements RedisStreamCommands {
 		return result != null ? StreamConverters.convertToByteRecords(result) : Collections.emptyList();
 	}
 
-	@Override
-	public List<@NonNull ByteRecord> xReadGroup(@NonNull Consumer consumer, @NonNull StreamReadOptions readOptions,
-			@NonNull StreamOffset<byte[]>... streams) {
+	@SafeVarargs
+    @Override
+	public final List<@NonNull ByteRecord> xReadGroup(@NonNull Consumer consumer, @NonNull StreamReadOptions readOptions,
+                                                      @NonNull StreamOffset<byte[]> @NonNull ... streams) {
 
 		Assert.notNull(consumer, "Consumer must not be null");
 		Assert.notNull(readOptions, "StreamReadOptions must not be null");
@@ -376,7 +376,7 @@ class JedisClientStreamCommands implements RedisStreamCommands {
 	}
 
 	@Override
-	public List<@NonNull ByteRecord> xRevRange(byte @NonNull [] key, @NonNull Range<String> range, @NonNull Limit limit) {
+	public List<@NonNull ByteRecord> xRevRange(byte @NonNull [] key, @NonNull Range<@NonNull String> range, @NonNull Limit limit) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range must not be null");

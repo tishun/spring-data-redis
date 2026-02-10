@@ -27,12 +27,7 @@ import org.springframework.data.redis.connection.ClusterCommandExecutor.ClusterC
 import org.springframework.data.redis.connection.ClusterCommandExecutor.MultiKeyClusterCommandCallback;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.NodeResult;
 import org.springframework.data.redis.connection.RedisClusterNode.SlotRange;
-import redis.clients.jedis.Connection;
-import redis.clients.jedis.ConnectionPool;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisClusterInfoCache;
-import redis.clients.jedis.RedisClusterClient;
+import redis.clients.jedis.*;
 import redis.clients.jedis.providers.ClusterConnectionProvider;
 
 import java.time.Duration;
@@ -291,17 +286,17 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 	}
 
 	@Override
-	public Set<byte[]> keys(RedisClusterNode node, byte[] pattern) {
+	public Set<byte[]> keys(@NonNull RedisClusterNode node, byte @NonNull [] pattern) {
 		return keyCommands.keys(node, pattern);
 	}
 
 	@Override
-	public Cursor<byte[]> scan(RedisClusterNode node, ScanOptions options) {
+	public Cursor<byte[]> scan(@NonNull RedisClusterNode node, @NonNull ScanOptions options) {
 		return keyCommands.scan(node, options);
 	}
 
 	@Override
-	public byte[] randomKey(RedisClusterNode node) {
+	public byte[] randomKey(@NonNull RedisClusterNode node) {
 		return keyCommands.randomKey(node);
 	}
 
@@ -321,7 +316,7 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 	}
 
 	@Override
-	public void watch(byte[]... keys) {
+	public void watch(byte[] @NonNull ... keys) {
 		throw new InvalidDataAccessApiUsageException("WATCH is currently not supported in cluster mode");
 	}
 
@@ -444,7 +439,7 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 		JedisClientClusterCommandCallback<List<byte[]>> command = jedis -> JedisConverters.stringListToByteList()
 				.convert(jedis.clusterGetKeysInSlot(slot, nullSafeIntValue(count)));
 
-		NodeResult<List<byte[]>> result = this.clusterCommandExecutor.executeCommandOnSingleNode(command, node);
+		NodeResult<@NonNull List<byte[]>> result = this.clusterCommandExecutor.executeCommandOnSingleNode(command, node);
 
 		return result.getValue();
 	}
@@ -585,12 +580,12 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 
 		Set<RedisClusterNode> activeMasterNodes = this.topologyProvider.getTopology().getActiveMasterNodes();
 
-		List<NodeResult<Collection<RedisClusterNode>>> nodeResults = this.clusterCommandExecutor
+		List<NodeResult<@NonNull Collection<RedisClusterNode>>> nodeResults = this.clusterCommandExecutor
 				.executeCommandAsyncOnNodes(command, activeMasterNodes).getResults();
 
 		Map<RedisClusterNode, Collection<RedisClusterNode>> result = new LinkedHashMap<>();
 
-		for (NodeResult<Collection<RedisClusterNode>> nodeResult : nodeResults) {
+		for (NodeResult<@NonNull Collection<RedisClusterNode>> nodeResult : nodeResults) {
 			result.put(nodeResult.getNode(), nodeResult.getValue());
 		}
 
@@ -685,7 +680,7 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 	 * @param <T>
 	 * @since 4.1
 	 */
-	protected interface JedisClientClusterCommandCallback<T> extends ClusterCommandCallback<Jedis, T> {}
+	protected interface JedisClientClusterCommandCallback<T> extends ClusterCommandCallback<@NonNull Jedis, T> {}
 
 	/**
 	 * {@link Jedis} specific {@link MultiKeyClusterCommandCallback}.
@@ -694,7 +689,7 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 	 * @param <T>
 	 * @since 4.1
 	 */
-	protected interface JedisClientMultiKeyClusterCommandCallback<T> extends MultiKeyClusterCommandCallback<Jedis, T> {}
+	protected interface JedisClientMultiKeyClusterCommandCallback<T> extends MultiKeyClusterCommandCallback<@NonNull Jedis, T> {}
 
 	/**
 	 * Jedis specific implementation of {@link ClusterNodeResourceProvider}.

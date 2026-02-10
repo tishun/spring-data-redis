@@ -22,6 +22,7 @@ import org.jspecify.annotations.NullUnmarked;
 import org.springframework.data.redis.connection.RedisScriptingCommands;
 import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.util.Assert;
+import redis.clients.jedis.UnifiedJedis;
 
 /**
  * @author Tihomir Mateev
@@ -40,14 +41,14 @@ class JedisClientScriptingCommands implements RedisScriptingCommands {
 	@Override
 	public void scriptFlush() {
 		connection.execute(
-				client -> client.scriptFlush(),
+                UnifiedJedis::scriptFlush,
 				pipeline -> pipeline.scriptFlush(SAMPLE_KEY));
 	}
 
 	@Override
 	public void scriptKill() {
 		connection.execute(
-				client -> client.scriptKill(),
+                UnifiedJedis::scriptKill,
 				pipeline -> pipeline.scriptKill(SAMPLE_KEY));
 	}
 
