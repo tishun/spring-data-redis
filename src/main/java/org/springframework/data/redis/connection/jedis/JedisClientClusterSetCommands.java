@@ -266,8 +266,7 @@ class JedisClientClusterSetCommands implements RedisSetCommands {
 
 		Collection<Set<byte[]>> resultList = connection.getClusterCommandExecutor()
 				.executeMultiKeyCommand(
-						(JedisMultiKeyClusterCommandCallback<Set<byte[]>>) (client, key) -> client.smembers(key),
-						Arrays.asList(keys))
+						(JedisMultiKeyClusterCommandCallback<Set<byte[]>>) Jedis::smembers, Arrays.asList(keys))
 				.resultsAsList();
 
 		ByteArraySet result = new ByteArraySet();

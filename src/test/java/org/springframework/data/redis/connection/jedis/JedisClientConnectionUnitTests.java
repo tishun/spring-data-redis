@@ -20,7 +20,6 @@ import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.UnifiedJedis;
 

@@ -183,7 +183,7 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 
 	@Override
 	public Properties info(@NonNull RedisClusterNode node) {
-		return JedisConverters.toProperties(executeCommandOnSingleNode(Jedis::info, node).getValue());
+		return JedisConverters.toProperties(Objects.requireNonNull(executeCommandOnSingleNode(Jedis::info, node).getValue()));
 	}
 
 	@Override
@@ -193,12 +193,12 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 
 		Properties infos = new Properties();
 
-		List<NodeResult<Properties>> nodeResults = connection.getClusterCommandExecutor()
+		List<NodeResult<@NonNull Properties>> nodeResults = connection.getClusterCommandExecutor()
 				.executeCommandOnAllNodes(
 						(JedisClusterCommandCallback<Properties>) client -> JedisConverters.toProperties(client.info(section)))
 				.getResults();
 
-		for (NodeResult<Properties> nodeProperties : nodeResults) {
+		for (NodeResult<@NonNull Properties> nodeProperties : nodeResults) {
 			for (Entry<Object, Object> entry : nodeProperties.getValue().entrySet()) {
 				infos.put(nodeProperties.getNode().asString() + "." + entry.getKey(), entry.getValue());
 			}
@@ -212,7 +212,9 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 
 		Assert.notNull(section, "Section must not be null");
 
-		return JedisConverters.toProperties(executeCommandOnSingleNode(client -> client.info(section), node).getValue());
+		return JedisConverters.toProperties(
+				Objects.requireNonNull(executeCommandOnSingleNode(client -> client.info(section), node).getValue())
+		);
 	}
 
 	@Override
@@ -232,7 +234,7 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 	}
 
 	@Override
-	public void shutdown(@NonNull ShutdownOption option) {
+	public void shutdown(ShutdownOption option) {
 
 		if (option == null) {
 			shutdown();
@@ -249,12 +251,12 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 
 		JedisClusterCommandCallback<Map<String, String>> command = jedis -> jedis.configGet(pattern);
 
-		List<NodeResult<Map<String, String>>> nodeResults = connection.getClusterCommandExecutor()
+		List<NodeResult<@NonNull Map<String, String>>> nodeResults = connection.getClusterCommandExecutor()
 				.executeCommandOnAllNodes(command).getResults();
 
 		Properties nodesConfiguration = new Properties();
 
-		for (NodeResult<Map<String, String>> nodeResult : nodeResults) {
+		for (NodeResult<@NonNull Map<String, String>> nodeResult : nodeResults) {
 
 			String prefix = nodeResult.getNode().asString();
 

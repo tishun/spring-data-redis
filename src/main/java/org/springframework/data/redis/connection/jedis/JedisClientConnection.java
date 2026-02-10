@@ -191,7 +191,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	 * @return the converted command result, or null in pipelined/transactional mode
 	 */
 	<S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
-			Function<PipeliningBase, Response<S>> pipelineFunction, Converter<S, T> converter) {
+			Function<PipeliningBase, Response<S>> pipelineFunction, Converter<@NonNull S, T> converter) {
 
 		return doWithClient(c -> {
 
@@ -506,7 +506,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 				.build();
 	}
 
-	<T, R> JedisResult<@NonNull T, @NonNull R> newJedisResult(Response<T> response, Converter<T, R> converter, Supplier<R> defaultValue) {
+	<T, R> JedisResult<@NonNull T, @NonNull R> newJedisResult(Response<T> response, Converter<@NonNull T, R> converter, Supplier<R> defaultValue) {
 
 		return JedisResultBuilder.<T, R> forResponse(response).mappedWith(converter)
 				.convertPipelineAndTxResults(convertPipelineAndTxResults).mapNullTo(defaultValue).build();

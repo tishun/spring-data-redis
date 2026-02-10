@@ -57,7 +57,7 @@ import org.springframework.util.Assert;
 @NullUnmarked
 class JedisClientClusterZSetCommands implements RedisZSetCommands {
 
-	private static final SetConverter<redis.clients.jedis.resps.Tuple, @NonNull Tuple> TUPLE_SET_CONVERTER = new SetConverter<>(
+	private static final SetConverter<redis.clients.jedis.resps.@NonNull Tuple, @NonNull Tuple> TUPLE_SET_CONVERTER = new SetConverter<>(
 			JedisConverters::toTuple);
 
 	private final JedisClientClusterConnection connection;
@@ -414,9 +414,9 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 	}
 
 	@Override
-	public Set<@NonNull byte[]> zRangeByScore(byte @NonNull [] key,
-			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
-			org.springframework.data.redis.connection.@NonNull Limit limit) {
+	public Set<byte[]> zRangeByScore(byte @NonNull [] key,
+                                     org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
+                                     org.springframework.data.redis.connection.@NonNull Limit limit) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range cannot be null for ZRANGEBYSCORE");
@@ -1081,14 +1081,14 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 	}
 
 	@Override
-	public Cursor<@NonNull Tuple> zScan(byte @NonNull [] key, @NonNull ScanOptions options) {
+	public Cursor<@NonNull Tuple> zScan(byte @NonNull [] key, ScanOptions options) {
 
 		Assert.notNull(key, "Key must not be null");
 
 		return new ScanCursor<Tuple>(options) {
 
 			@Override
-			protected ScanIteration<Tuple> doScan(CursorId cursorId, ScanOptions options) {
+			protected ScanIteration<@NonNull Tuple> doScan(@NonNull CursorId cursorId, @NonNull ScanOptions options) {
 
 				ScanParams params = JedisConverters.toScanParams(options);
 

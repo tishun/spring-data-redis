@@ -751,7 +751,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 			@Override
 			protected void doClose() {
 				JedisClientZSetCommands.this.connection.close();
-			};
+			}
 
 		}.open();
 	}

@@ -772,7 +772,7 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 		}
 
 		@Override
-		public void returnResourceForSpecificNode(@NonNull RedisClusterNode node, @NonNull Object client) {
+		public void returnResourceForSpecificNode(RedisClusterNode node, Object client) {
 			((Jedis) client).close();
 		}
 	}
