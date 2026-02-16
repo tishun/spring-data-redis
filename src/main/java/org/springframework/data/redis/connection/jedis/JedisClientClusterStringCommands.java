@@ -95,7 +95,7 @@ class JedisClientClusterStringCommands implements RedisStringCommands {
 		Assert.notNull(value, "Value must not be null");
 
 		try {
-			return connection.getClusterClient().getSet(key, value);
+			return connection.getClusterClient().setGet(key, value);
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}

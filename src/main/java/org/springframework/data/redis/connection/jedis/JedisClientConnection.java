@@ -48,14 +48,11 @@ import java.util.function.Supplier;
  * <p>
  * This class is not Thread-safe and instances should not be shared across threads.
  * <p>
- * This implementation reuses the existing command classes from the legacy {@link JedisConnection} implementation,
- * providing full support for all Redis commands, pipelining, transactions, and pub/sub.
- * <p>
- * Supports {@link RedisClient} for standalone connections, {@link RedisSentinelClient} for sentinel-managed
+ * Supports {@link UnifiedJedis} for standalone connections, {@link RedisSentinelClient} for sentinel-managed
  * connections, and other {@link UnifiedJedis} implementations.
  *
  * @author Tihomir Mateev
- * @since 3.5
+ * @since 4.1
  * @see UnifiedJedis
  * @see RedisClient
  * @see RedisSentinelClient
@@ -95,6 +92,9 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 	private volatile @Nullable AbstractTransaction transaction;
 
+	// Execution strategy - changes based on pipeline/transaction state
+	private ExecutionStrategy executionStrategy = new DirectExecutionStrategy();
+
 	public JedisClientConnection(@NonNull UnifiedJedis client) {
 		this(client, DefaultJedisClientConfig.builder().build());
 	}
@@ -121,96 +121,80 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 	/**
 	 * Execute a Redis command with identity conversion (no transformation).
+	 * <p>
+	 * The {@code batchFunction} is used for both pipeline and transaction modes, as both {@link AbstractPipeline} and
+	 * {@link AbstractTransaction} extend {@link PipeliningBase} and share the same API.
 	 *
 	 * @param directFunction function to execute in direct mode on UnifiedJedis
-	 * @param pipelineFunction function to execute in pipelined/transactional mode on PipeliningBase
+	 * @param batchFunction function to execute in pipeline or transaction mode on PipeliningBase
 	 * @param <T> the result type
 	 * @return the command result, or null in pipelined/transactional mode
 	 */
 	<T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
-			Function<PipeliningBase, Response<T>> pipelineFunction) {
-
-		return doWithClient(c -> {
-
-			if (isQueueing()) {
-				Response<T> response = pipelineFunction.apply(getRequiredTransaction());
-				transaction(newJedisResult(response));
-				return null;
-			}
-
-			if (isPipelined()) {
-				Response<T> response = pipelineFunction.apply(getRequiredPipeline());
-				pipeline(newJedisResult(response));
-				return null;
-			}
-
-			// Direct execution
-			return directFunction.apply(c);
-		});
+			Function<PipeliningBase, Response<T>> batchFunction) {
+		return executionStrategy.execute(directFunction, batchFunction);
 	}
 
 	/**
 	 * Execute a Redis command that returns a status response.
 	 * Status responses are handled specially and not included in transactional results.
+	 * <p>
+	 * The {@code batchFunction} is used for both pipeline and transaction modes,
+	 * as both {@link AbstractPipeline} and {@link AbstractTransaction} extend
+	 * {@link PipeliningBase} and share the same command API.
 	 *
 	 * @param directFunction function to execute in direct mode on UnifiedJedis
-	 * @param pipelineFunction function to execute in pipelined/transactional mode on PipeliningBase
+	 * @param batchFunction function to execute in pipeline or transaction mode on PipeliningBase
 	 * @param <T> the result type
 	 * @return the command result, or null in pipelined/transactional mode
 	 */
 	<T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
-			Function<PipeliningBase, Response<T>> pipelineFunction) {
-
-		return doWithClient(c -> {
-
-			if (isQueueing()) {
-				Response<T> response = pipelineFunction.apply(getRequiredTransaction());
-				transaction(newStatusResult(response));
-				return null;
-			}
-
-			if (isPipelined()) {
-				Response<T> response = pipelineFunction.apply(getRequiredPipeline());
-				pipeline(newStatusResult(response));
-				return null;
-			}
-
-			// Direct execution
-			return directFunction.apply(c);
-		});
+			Function<PipeliningBase, Response<T>> batchFunction) {
+		return executionStrategy.executeStatus(directFunction, batchFunction);
 	}
 
+
 	/**
-	 * Execute a command with a custom converter.
+	 * Execute a Redis command with a custom converter.
+	 * <p>
+	 * The {@code batchFunction} is used for both pipeline and transaction modes,
+	 * as both {@link AbstractPipeline} and {@link AbstractTransaction} extend
+	 * {@link PipeliningBase} and share the same command API.
 	 *
 	 * @param directFunction function to execute in direct mode on UnifiedJedis
-	 * @param pipelineFunction function to execute in pipelined/transactional mode on PipeliningBase
+	 * @param batchFunction function to execute in pipeline or transaction mode on PipeliningBase
 	 * @param converter converter to transform the result
 	 * @param <S> the source type
 	 * @param <T> the target type
 	 * @return the converted command result, or null in pipelined/transactional mode
 	 */
 	<S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
-			Function<PipeliningBase, Response<S>> pipelineFunction, Converter<@NonNull S, T> converter) {
+			Function<PipeliningBase, Response<S>> batchFunction,
+			Converter<@NonNull S, T> converter) {
 
-		return doWithClient(c -> {
+		return execute(directFunction, batchFunction, converter, () -> null);
+	}
 
-			if (isQueueing()) {
-				Response<S> response = pipelineFunction.apply(getRequiredTransaction());
-				transaction(newJedisResult(response, converter, () -> null));
-				return null;
-			}
-
-			if (isPipelined()) {
-				Response<S> response = pipelineFunction.apply(getRequiredPipeline());
-				pipeline(newJedisResult(response, converter, () -> null));
-				return null;
-			}
-
-			// Direct execution
-			S result = directFunction.apply(c);
-			return result != null ? converter.convert(result) : null;
-		});
+	/**
+	 * Execute a Redis command with a custom converter and default value.
+	 * <p>
+	 * The {@code batchFunction} is used for both pipeline and transaction modes,
+	 * as both {@link AbstractPipeline} and {@link AbstractTransaction} extend
+	 * {@link PipeliningBase} and share the same command API.
+	 *
+	 * @param directFunction function to execute in direct mode on UnifiedJedis
+	 * @param batchFunction function to execute in pipeline or transaction mode on PipeliningBase
+	 * @param converter converter to transform the result
+	 * @param defaultValue supplier for default value when result is null
+	 * @param <S> the source type
+	 * @param <T> the target type
+	 * @return the converted command result, or null in pipelined/transactional mode
+	 */
+	<S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
+			Function<PipeliningBase, Response<S>> batchFunction,
+			Converter<@NonNull S, T> converter,
+			Supplier<T> defaultValue) {
+		return executionStrategy.execute(directFunction, batchFunction, converter, defaultValue);
 	}
 
 	/**
@@ -286,6 +270,20 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 	@Override
 	public Object execute(@NonNull String command, byte @NonNull []... args) {
+		return execute(command, false, null, args);
+	}
+
+	/**
+	 * Execute a command with optional converter and status flag.
+	 *
+	 * @param command the command to execute
+	 * @param isStatus whether this is a status command (should not add results to pipeline)
+	 * @param converter optional converter to transform the result
+	 * @param args command arguments
+	 * @return the result
+	 */
+	<T> @Nullable T execute(@NonNull String command, boolean isStatus, @Nullable Converter<Object, T> converter,
+			byte @NonNull []... args) {
 
 		Assert.hasText(command, "A valid command needs to be specified");
 		Assert.notNull(args, "Arguments must not be null");
@@ -300,14 +298,27 @@ public class JedisClientConnection extends AbstractRedisConnection {
 				CommandObject<Object> commandObject = new CommandObject<>(arguments, BuilderFactory.RAW_OBJECT);
 
 				if (isPipelined()) {
-					pipeline(newJedisResult(getRequiredPipeline().executeCommand(commandObject)));
+					if (isStatus) {
+						pipeline(newStatusResult(getRequiredPipeline().executeCommand(commandObject)));
+					} else if (converter != null) {
+						pipeline(newJedisResult(getRequiredPipeline().executeCommand(commandObject), converter, () -> null));
+					} else {
+						pipeline(newJedisResult(getRequiredPipeline().executeCommand(commandObject)));
+					}
 				} else {
-					transaction(newJedisResult(getRequiredTransaction().executeCommand(commandObject)));
+					if (isStatus) {
+						transaction(newStatusResult(getRequiredTransaction().executeCommand(commandObject)));
+					} else if (converter != null) {
+						transaction(newJedisResult(getRequiredTransaction().executeCommand(commandObject), converter, () -> null));
+					} else {
+						transaction(newJedisResult(getRequiredTransaction().executeCommand(commandObject)));
+					}
 				}
 				return null;
 			}
 
-			return c.sendCommand(protocolCommand, args);
+			Object result = c.sendCommand(protocolCommand, args);
+			return converter != null ? converter.convert(result) : (T) result;
 		});
 	}
 
@@ -321,6 +332,24 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		if (subscription != null) {
 			doExceptionThrowingOperationSafely(subscription::close);
 			this.subscription = null;
+		}
+
+		// Close any open pipeline to ensure connection is returned to pool
+		if (isPipelined()) {
+			try {
+				closePipeline();
+			} catch (Exception ex) {
+				log.warn("Failed to close pipeline during connection close", ex);
+			}
+		}
+
+		// Discard any open transaction
+		if (isQueueing()) {
+			try {
+				discard();
+			} catch (Exception ex) {
+				log.warn("Failed to discard transaction during connection close", ex);
+			}
 		}
 
 		// RedisClient is managed by the factory, so we don't close it here
@@ -357,6 +386,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		if (pipeline == null) {
 			pipeline = client.pipelined();
+			executionStrategy = new PipelineExecutionStrategy();
 		}
 	}
 
@@ -367,8 +397,14 @@ public class JedisClientConnection extends AbstractRedisConnection {
 			try {
 				return convertPipelineResults();
 			} finally {
+				try {
+					pipeline.close(); // Return connection to pool
+				} catch (Exception ex) {
+					log.warn("Failed to close pipeline", ex);
+				}
 				pipeline = null;
 				pipelinedResults.clear();
+				executionStrategy = new DirectExecutionStrategy();
 			}
 		}
 
@@ -430,12 +466,18 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		Assert.notNull(message, "Message must not be null");
 
-		return doWithClient(c -> (byte[]) c.sendCommand(Protocol.Command.ECHO, message));
+		return execute(
+				client -> (byte[]) client.sendCommand(Protocol.Command.ECHO, message),
+				pipeline -> pipeline.sendCommand(Protocol.Command.ECHO, message),
+				result -> (byte[]) result);
 	}
 
 	@Override
 	public String ping() {
-		return doWithClient(UnifiedJedis::ping);
+		return execute(
+				UnifiedJedis::ping,
+				pipeline -> pipeline.sendCommand(Protocol.Command.PING, new byte[0][]),
+				result -> result instanceof byte[] ? JedisConverters.toString((byte[]) result) : (String) result);
 	}
 
 	/**
@@ -623,6 +665,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		doWithClient(c -> {
 			this.transaction = c.multi();
+			executionStrategy = new TransactionExecutionStrategy();
 		});
 	}
 
@@ -630,13 +673,11 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	public List<@Nullable Object> exec() {
 
 		try {
-
 			if (transaction == null) {
 				throw new InvalidDataAccessApiUsageException("No ongoing transaction; Did you forget to call multi");
 			}
 
 			List<Object> results = transaction.exec();
-
 			return !CollectionUtils.isEmpty(results)
 					? new TransactionResultConverter<>(txResults, JedisExceptionConverter.INSTANCE).convert(results)
 					: results;
@@ -644,8 +685,16 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		} finally {
+			try {
+				if (transaction != null) {
+					transaction.close(); // Return connection to pool
+				}
+			} catch (Exception ex) {
+				log.warn("Failed to close transaction", ex);
+			}
 			txResults.clear();
 			transaction = null;
+			executionStrategy = new DirectExecutionStrategy();
 		}
 	}
 
@@ -657,8 +706,16 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		} finally {
+			try {
+				if (transaction != null) {
+					transaction.close(); // Return connection to pool
+				}
+			} catch (Exception ex) {
+				log.warn("Failed to close transaction", ex);
+			}
 			txResults.clear();
 			transaction = null;
+			executionStrategy = new DirectExecutionStrategy();
 		}
 	}
 
@@ -675,6 +732,112 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	@Override
 	public void unwatch() {
 		doWithClient((Consumer<UnifiedJedis>) c -> c.sendCommand(Protocol.Command.UNWATCH));
+	}
+
+	/**
+	 * Strategy interface for executing commands in different modes (direct, pipeline, transaction).
+	 */
+	private interface ExecutionStrategy {
+		<T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
+								Function<PipeliningBase, Response<T>> batchFunction);
+
+		<T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
+									  Function<PipeliningBase, Response<T>> batchFunction);
+
+		<S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
+								   Function<PipeliningBase, Response<S>> batchFunction,
+								   Converter<@NonNull S, T> converter,
+								   Supplier<T> defaultValue);
+	}
+
+	/**
+	 * Direct execution strategy - executes commands immediately on UnifiedJedis.
+	 */
+	private final class DirectExecutionStrategy implements ExecutionStrategy {
+		@Override
+		public <T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
+									   Function<PipeliningBase, Response<T>> batchFunction) {
+			return doWithClient(directFunction);
+		}
+
+		@Override
+		public <T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
+											 Function<PipeliningBase, Response<T>> batchFunction) {
+			return doWithClient(directFunction);
+		}
+
+		@Override
+		public <S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
+										  Function<PipeliningBase, Response<S>> batchFunction,
+										  Converter<@NonNull S, T> converter,
+										  Supplier<T> defaultValue) {
+			return doWithClient(c -> {
+				S result = directFunction.apply(c);
+				return result != null ? converter.convert(result) : defaultValue.get();
+			});
+		}
+	}
+
+	/**
+	 * Pipeline execution strategy - queues commands in a pipeline.
+	 */
+	private final class PipelineExecutionStrategy implements ExecutionStrategy {
+		@Override
+		public <T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
+									   Function<PipeliningBase, Response<T>> batchFunction) {
+			Response<T> response = batchFunction.apply(getRequiredPipeline());
+			pipeline(newJedisResult(response));
+			return null;
+		}
+
+		@Override
+		public <T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
+											 Function<PipeliningBase, Response<T>> batchFunction) {
+			Response<T> response = batchFunction.apply(getRequiredPipeline());
+			pipeline(newStatusResult(response));
+			return null;
+		}
+
+		@Override
+		public <S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
+										  Function<PipeliningBase, Response<S>> batchFunction,
+										  Converter<@NonNull S, T> converter,
+										  Supplier<T> defaultValue) {
+			Response<S> response = batchFunction.apply(getRequiredPipeline());
+			pipeline(newJedisResult(response, converter, defaultValue));
+			return null;
+		}
+	}
+
+	/**
+	 * Transaction execution strategy - queues commands in a transaction.
+	 */
+	private final class TransactionExecutionStrategy implements ExecutionStrategy {
+		@Override
+		public <T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
+									   Function<PipeliningBase, Response<T>> batchFunction) {
+			Response<T> response = batchFunction.apply(getRequiredTransaction());
+			transaction(newJedisResult(response));
+			return null;
+		}
+
+		@Override
+		public <T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
+											 Function<PipeliningBase, Response<T>> batchFunction) {
+			Response<T> response = batchFunction.apply(getRequiredTransaction());
+			transaction(newStatusResult(response));
+			return null;
+		}
+
+		@Override
+		public <S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
+										  Function<PipeliningBase, Response<S>> batchFunction,
+										  Converter<@NonNull S, T> converter,
+										  Supplier<T> defaultValue) {
+			Response<S> response = batchFunction.apply(getRequiredTransaction());
+			transaction(newJedisResult(response, converter, defaultValue));
+			return null;
+		}
 	}
 }
 

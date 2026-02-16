@@ -27,10 +27,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.SmartLifecycle;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.data.redis.ExceptionTranslationStrategy;
@@ -67,7 +69,7 @@ import static org.springframework.data.redis.connection.jedis.JedisConnectionFac
  * documentation</a> for guidance on configuring Jedis in a multithreaded environment.
  *
  * @author Tihomir Mateev
- * @since 4.0
+ * @since 4.1
  * @see RedisClient
  * @see JedisClientConfiguration
  * @see JedisConnectionFactory
@@ -94,6 +96,10 @@ public class JedisClientConnectionFactory
 	private @Nullable RedisSentinelClient sentinelClient;
 	private @Nullable RedisClusterClient clusterClient;
 	private @Nullable RedisConfiguration configuration;
+
+	private @Nullable ClusterTopologyProvider topologyProvider;
+	private @Nullable ClusterCommandExecutor clusterCommandExecutor;
+	private AsyncTaskExecutor executor = new org.springframework.core.task.SimpleAsyncTaskExecutor();
 
 	private RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration("localhost",
 			Protocol.DEFAULT_PORT);
@@ -169,7 +175,6 @@ public class JedisClientConnectionFactory
 	 * {@link RedisSentinelConfiguration}.
 	 *
 	 * @param sentinelConfiguration must not be {@literal null}.
-	 * @since 3.5
 	 */
 	public JedisClientConnectionFactory(RedisSentinelConfiguration sentinelConfiguration) {
 		this(sentinelConfiguration, new MutableJedisClientConfiguration());
@@ -181,7 +186,6 @@ public class JedisClientConnectionFactory
 	 *
 	 * @param sentinelConfiguration must not be {@literal null}.
 	 * @param clientConfiguration must not be {@literal null}.
-	 * @since 3.5
 	 */
 	public JedisClientConnectionFactory(RedisSentinelConfiguration sentinelConfiguration,
 			JedisClientConfiguration clientConfiguration) {
@@ -199,7 +203,6 @@ public class JedisClientConnectionFactory
 	 *
 	 * @param sentinelConfiguration must not be {@literal null}.
 	 * @param poolConfig must not be {@literal null}.
-	 * @since 3.5
 	 */
 	public JedisClientConnectionFactory(RedisSentinelConfiguration sentinelConfiguration, JedisPoolConfig poolConfig) {
 		this(sentinelConfiguration, new MutableJedisClientConfiguration());
@@ -214,7 +217,6 @@ public class JedisClientConnectionFactory
 	 * {@link RedisClusterConfiguration}.
 	 *
 	 * @param clusterConfiguration must not be {@literal null}.
-	 * @since 3.5
 	 */
 	public JedisClientConnectionFactory(RedisClusterConfiguration clusterConfiguration) {
 		this(clusterConfiguration, new MutableJedisClientConfiguration());
@@ -226,7 +228,6 @@ public class JedisClientConnectionFactory
 	 *
 	 * @param clusterConfiguration must not be {@literal null}.
 	 * @param clientConfiguration must not be {@literal null}.
-	 * @since 3.5
 	 */
 	public JedisClientConnectionFactory(RedisClusterConfiguration clusterConfiguration,
 			JedisClientConfiguration clientConfiguration) {
@@ -244,7 +245,6 @@ public class JedisClientConnectionFactory
 	 *
 	 * @param clusterConfiguration must not be {@literal null}.
 	 * @param poolConfig must not be {@literal null}.
-	 * @since 3.5
 	 */
 	public JedisClientConnectionFactory(RedisClusterConfiguration clusterConfiguration, JedisPoolConfig poolConfig) {
 		this(clusterConfiguration, new MutableJedisClientConfiguration());
@@ -305,7 +305,6 @@ public class JedisClientConnectionFactory
 
 	/**
 	 * @return the {@link RedisSentinelConfiguration} or {@literal null} if not configured.
-	 * @since 3.5
 	 */
 	public @Nullable RedisSentinelConfiguration getSentinelConfiguration() {
 		return RedisConfiguration.isSentinelConfiguration(configuration)
@@ -315,7 +314,6 @@ public class JedisClientConnectionFactory
 
 	/**
 	 * @return the {@link RedisClusterConfiguration} or {@literal null} if not configured.
-	 * @since 3.5
 	 */
 	public @Nullable RedisClusterConfiguration getClusterConfiguration() {
 		return RedisConfiguration.isClusterConfiguration(configuration)
@@ -325,7 +323,6 @@ public class JedisClientConnectionFactory
 
 	/**
 	 * @return true when {@link RedisSentinelConfiguration} is present.
-	 * @since 3.5
 	 */
 	public boolean isRedisSentinelAware() {
 		return RedisConfiguration.isSentinelConfiguration(configuration);
@@ -333,7 +330,6 @@ public class JedisClientConnectionFactory
 
 	/**
 	 * @return true when {@link RedisClusterConfiguration} is present.
-	 * @since 3.5
 	 */
 	public boolean isRedisClusterAware() {
 		return RedisConfiguration.isClusterConfiguration(configuration);
@@ -343,7 +339,6 @@ public class JedisClientConnectionFactory
 	 * Returns the client name.
 	 *
 	 * @return the client name.
-	 * @since 3.5
 	 */
 	public @Nullable String getClientName() {
 		return clientConfiguration.getClientName().orElse(null);
@@ -353,7 +348,6 @@ public class JedisClientConnectionFactory
 	 * Sets the client name used by this connection factory. Defaults to none which does not set a client name.
 	 *
 	 * @param clientName the client name.
-	 * @since 3.5
 	 * @deprecated since 3.5, configure the client name using {@link JedisClientConfiguration}.
 	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
 	 */
@@ -363,10 +357,39 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
+	 * Returns whether SSL is enabled.
+	 *
+	 * @return {@literal true} if SSL is enabled.
+	 */
+	public boolean isUseSsl() {
+		return clientConfiguration.isUseSsl();
+	}
+
+	/**
+	 * Sets whether to use SSL.
+	 *
+	 * @param useSsl {@literal true} to use SSL.
+	 * @deprecated since 4.1, configure the SSL usage with {@link JedisClientConfiguration}.
+	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
+	 */
+	@Deprecated
+	public void setUseSsl(boolean useSsl) {
+		getMutableConfiguration().setUseSsl(useSsl);
+	}
+
+	/**
+	 * Returns the read timeout in milliseconds.
+	 *
+	 * @return the read timeout in milliseconds.
+	 */
+	public int getTimeout() {
+		return (int) clientConfiguration.getReadTimeout().toMillis();
+	}
+
+	/**
 	 * Sets the timeout.
 	 *
 	 * @param timeout the timeout to set.
-	 * @since 3.5
 	 * @deprecated since 3.5, configure the timeout using {@link JedisClientConfiguration}.
 	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
 	 */
@@ -375,6 +398,90 @@ public class JedisClientConnectionFactory
 
 		getMutableConfiguration().setReadTimeout(Duration.ofMillis(timeout));
 		getMutableConfiguration().setConnectTimeout(Duration.ofMillis(timeout));
+	}
+
+	/**
+	 * Sets the database index.
+	 *
+	 * @param index the database index to set.
+	 * @deprecated since 4.1, configure the database index using {@link RedisStandaloneConfiguration} or
+	 * {@link RedisSentinelConfiguration}.
+	 * @throws IllegalStateException if the configuration is immutable.
+	 */
+	@Deprecated
+	public void setDatabase(int index) {
+
+		Assert.isTrue(index >= 0, "invalid DB index (a positive index required)");
+
+		if (RedisConfiguration.isDatabaseIndexAware(configuration)) {
+			((RedisConfiguration.WithDatabaseIndex) configuration).setDatabase(index);
+		} else {
+			standaloneConfig.setDatabase(index);
+		}
+	}
+
+	/**
+	 * Returns whether connection pooling is enabled.
+	 *
+	 * @return {@literal true} if connection pooling is enabled.
+	 */
+	public boolean getUsePool() {
+		return clientConfiguration.isUsePooling();
+	}
+
+	/**
+	 * Returns the pool configuration.
+	 *
+	 * @return the pool configuration or {@literal null} if not configured.
+	 */
+	public <T> @Nullable GenericObjectPoolConfig<T> getPoolConfig() {
+		return (GenericObjectPoolConfig<T>) clientConfiguration.getPoolConfig().orElse(null);
+	}
+
+	/**
+	 * Sets the pool configuration.
+	 *
+	 * @param poolConfig the pool configuration to set.
+	 * @deprecated since 4.1, configure {@link JedisPoolConfig} using {@link JedisClientConfiguration}.
+	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
+	 */
+	@Deprecated
+	public void setPoolConfig(JedisPoolConfig poolConfig) {
+		getMutableConfiguration().setPoolConfig(poolConfig);
+	}
+
+	/**
+	 * Sets whether to use connection pooling.
+	 *
+	 * @param usePool {@literal true} to use connection pooling.
+	 * @deprecated since 4.1, configure pooling usage with {@link JedisClientConfiguration}.
+	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
+	 */
+	@Deprecated
+	public void setUsePool(boolean usePool) {
+		getMutableConfiguration().setUsePooling(usePool);
+	}
+
+	/**
+	 * Sets the async task executor for cluster command execution.
+	 *
+	 * @param executor the executor to use for async cluster commands.
+	 */
+	public void setExecutor(AsyncTaskExecutor executor) {
+		this.executor = executor;
+	}
+
+	/**
+	 * Returns the cluster command executor.
+	 *
+	 * @return the cluster command executor.
+	 * @throws IllegalStateException if the factory is not in cluster mode or not started.
+	 */
+	ClusterCommandExecutor getRequiredClusterCommandExecutor() {
+		if (clusterCommandExecutor == null) {
+			throw new IllegalStateException("ClusterCommandExecutor is not available. Ensure the factory is in cluster mode and has been started.");
+		}
+		return clusterCommandExecutor;
 	}
 
 	@Override
@@ -493,6 +600,8 @@ public class JedisClientConnectionFactory
 				this.sentinelClient = createRedisSentinelClient();
 			} else if (isRedisClusterAware()) {
 				this.clusterClient = createRedisClusterClient();
+				this.topologyProvider = createTopologyProvider(this.clusterClient);
+				this.clusterCommandExecutor = createClusterCommandExecutor(this.topologyProvider);
 			} else {
 				this.redisClient = createRedisClient();
 			}
@@ -542,7 +651,6 @@ public class JedisClientConnectionFactory
 	 * Creates {@link RedisSentinelClient}.
 	 *
 	 * @return the {@link RedisSentinelClient} to use. Never {@literal null}.
-	 * @since 3.5
 	 */
 	@SuppressWarnings("NullAway")
 	protected RedisSentinelClient createRedisSentinelClient() {
@@ -563,7 +671,6 @@ public class JedisClientConnectionFactory
 	 * Creates {@link RedisClusterClient}.
 	 *
 	 * @return the {@link RedisClusterClient} to use. Never {@literal null}.
-	 * @since 3.5
 	 */
 	@SuppressWarnings("NullAway")
 	protected RedisClusterClient createRedisClusterClient() {
@@ -769,7 +876,6 @@ public class JedisClientConnectionFactory
 	 *
 	 * @param sentinelConfiguration the sentinel configuration
 	 * @return the {@link JedisClientConfig} for sentinel authentication
-	 * @since 3.5
 	 */
 	JedisClientConfig createSentinelClientConfig(SentinelConfiguration sentinelConfiguration) {
 		return createClientConfig(0, sentinelConfiguration.getSentinelUsername(),
@@ -781,7 +887,6 @@ public class JedisClientConnectionFactory
 	 *
 	 * @param nodes the nodes to convert
 	 * @return the converted set of {@link HostAndPort}
-	 * @since 3.5
 	 */
 	private static Set<HostAndPort> convertToJedisSentinelSet(Collection<RedisNode> nodes) {
 
@@ -801,7 +906,6 @@ public class JedisClientConnectionFactory
 	 *
 	 * @param nodes the nodes to convert
 	 * @return the converted set of {@link HostAndPort}
-	 * @since 3.5
 	 */
 	private static Set<HostAndPort> convertToJedisClusterSet(Collection<RedisNode> nodes) {
 
@@ -814,6 +918,28 @@ public class JedisClientConnectionFactory
             convertedNodes.add(JedisConverters.toHostAndPort(node));
         }
 		return convertedNodes;
+	}
+
+	/**
+	 * Creates a {@link ClusterTopologyProvider} for the given {@link RedisClusterClient}.
+	 *
+	 * @param clusterClient the cluster client, must not be {@literal null}.
+	 * @return the topology provider.
+	 */
+	protected ClusterTopologyProvider createTopologyProvider(RedisClusterClient clusterClient) {
+		return new JedisClientClusterConnection.JedisClientClusterTopologyProvider(clusterClient);
+	}
+
+	/**
+	 * Creates a {@link ClusterCommandExecutor} for the given {@link ClusterTopologyProvider}.
+	 *
+	 * @param topologyProvider the topology provider, must not be {@literal null}.
+	 * @return the cluster command executor.
+	 */
+	protected ClusterCommandExecutor createClusterCommandExecutor(ClusterTopologyProvider topologyProvider) {
+		return new ClusterCommandExecutor(topologyProvider,
+				new JedisClientClusterConnection.JedisClientClusterNodeResourceProvider(this.clusterClient, topologyProvider),
+				EXCEPTION_TRANSLATION, this.executor);
 	}
 }
 

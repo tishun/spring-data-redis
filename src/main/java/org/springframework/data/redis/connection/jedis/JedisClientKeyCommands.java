@@ -18,7 +18,6 @@ package org.springframework.data.redis.connection.jedis;
 import redis.clients.jedis.PipeliningBase;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.args.ExpiryOption;
-import redis.clients.jedis.params.RestoreParams;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.params.SortingParams;
 import redis.clients.jedis.resps.ScanResult;
@@ -49,11 +48,15 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 
+import static org.springframework.data.redis.connection.convert.Converters.*;
+import static org.springframework.data.redis.connection.convert.Converters.millisecondsToTimeUnit;
+import static org.springframework.data.redis.connection.jedis.JedisConverters.toBytes;
+import static org.springframework.data.redis.connection.jedis.JedisConverters.toSortingParams;
+import static redis.clients.jedis.params.RestoreParams.restoreParams;
+
 /**
  * @author Tihomir Mateev
- * @author Mark Paluch
- * @author ihaohong
- * @since 3.5
+ * @since 4.1
  */
 @NullUnmarked
 class JedisClientKeyCommands implements RedisKeyCommands {
@@ -183,9 +186,9 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 				}
 
 				if (type != null) {
-					result = connection.getJedis().scan(JedisConverters.toBytes(cursorId), params, type);
+					result = connection.getJedis().scan(toBytes(cursorId), params, type);
 				} else {
-					result = connection.getJedis().scan(JedisConverters.toBytes(cursorId), params);
+					result = connection.getJedis().scan(toBytes(cursorId), params);
 				}
 
 				return new ScanIteration<>(CursorId.of(result.getCursor()), result.getResult());
@@ -222,7 +225,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		return connection.execute(
 				client -> client.renamenx(sourceKey, targetKey),
 				pipeline -> pipeline.renamenx(sourceKey, targetKey),
-				JedisConverters.longToBoolean());
+				longToBoolean());
 	}
 
 	@Override
@@ -238,14 +241,14 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 			return connection.execute(
 					client -> client.expire(key, seconds),
 					pipeline -> pipeline.expire(key, seconds),
-					JedisConverters.longToBoolean());
+					longToBoolean());
 		}
 
 		ExpiryOption option = ExpiryOption.valueOf(condition.name());
 		return connection.execute(
 				client -> client.expire(key, seconds, option),
 				pipeline -> pipeline.expire(key, seconds, option),
-				JedisConverters.longToBoolean());
+				longToBoolean());
 	}
 
 	@Override
@@ -257,14 +260,14 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 			return connection.execute(
 					client -> client.pexpire(key, millis),
 					pipeline -> pipeline.pexpire(key, millis),
-					JedisConverters.longToBoolean());
+					longToBoolean());
 		}
 
 		ExpiryOption option = ExpiryOption.valueOf(condition.name());
 		return connection.execute(
 				client -> client.pexpire(key, millis, option),
 				pipeline -> pipeline.pexpire(key, millis, option),
-				JedisConverters.longToBoolean());
+				longToBoolean());
 	}
 
 	@Override
@@ -276,14 +279,14 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 			return connection.execute(
 					client -> client.expireAt(key, unixTime),
 					pipeline -> pipeline.expireAt(key, unixTime),
-					JedisConverters.longToBoolean());
+					longToBoolean());
 		}
 
 		ExpiryOption option = ExpiryOption.valueOf(condition.name());
 		return connection.execute(
 				client -> client.expireAt(key, unixTime, option),
 				pipeline -> pipeline.expireAt(key, unixTime, option),
-				JedisConverters.longToBoolean());
+				longToBoolean());
 	}
 
 	@Override
@@ -296,14 +299,14 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 			return connection.execute(
 					client -> client.pexpireAt(key, unixTimeInMillis),
 					pipeline -> pipeline.pexpireAt(key, unixTimeInMillis),
-					JedisConverters.longToBoolean());
+					longToBoolean());
 		}
 
 		ExpiryOption option = ExpiryOption.valueOf(condition.name());
 		return connection.execute(
 				client -> client.pexpireAt(key, unixTimeInMillis, option),
 				pipeline -> pipeline.pexpireAt(key, unixTimeInMillis, option),
-				JedisConverters.longToBoolean());
+				longToBoolean());
 	}
 
 	@Override
@@ -314,7 +317,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		return connection.execute(
 				client -> client.persist(key),
 				pipeline -> pipeline.persist(key),
-				JedisConverters.longToBoolean());
+				longToBoolean());
 	}
 
 	@Override
@@ -322,8 +325,8 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		Long result = (Long) connection.execute("MOVE", key, JedisConverters.toBytes(String.valueOf(dbIndex)));
-		return JedisConverters.toBoolean(result);
+		return connection.execute("MOVE", false, result -> toBoolean((Long) result), key,
+				toBytes(String.valueOf(dbIndex)));
 	}
 
 	@Override
@@ -344,7 +347,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		return connection.execute(
 				client -> client.ttl(key),
 				pipeline -> pipeline.ttl(key),
-				Converters.secondsToTimeUnit(timeUnit));
+				secondsToTimeUnit(timeUnit));
 	}
 
 	@Override
@@ -365,7 +368,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		return connection.execute(
 				client -> client.pttl(key),
 				pipeline -> pipeline.pttl(key),
-				Converters.millisecondsToTimeUnit(timeUnit));
+				millisecondsToTimeUnit(timeUnit));
 	}
 
 	@Override
@@ -373,7 +376,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		SortingParams sortParams = JedisConverters.toSortingParams(params);
+		SortingParams sortParams = toSortingParams(params);
 
 		if (sortParams != null) {
 			return connection.execute(
@@ -391,7 +394,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		SortingParams sortParams = JedisConverters.toSortingParams(params);
+		SortingParams sortParams = toSortingParams(params);
 
 		if (sortParams != null) {
 			return connection.execute(
@@ -423,8 +426,8 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		if (replace) {
 
 			connection.executeStatus(
-					client -> client.restore(key, (int) ttlInMillis, serializedValue, RestoreParams.restoreParams().replace()),
-					pipeline -> pipeline.restore(key, (int) ttlInMillis, serializedValue, RestoreParams.restoreParams().replace()));
+					client -> client.restore(key, (int) ttlInMillis, serializedValue, restoreParams().replace()),
+					pipeline -> pipeline.restore(key, (int) ttlInMillis, serializedValue, restoreParams().replace()));
 			return;
 		}
 
@@ -442,11 +445,11 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		byte[] encoding = connection.execute(
+		return connection.execute(
 				client -> client.objectEncoding(key),
-				pipeline -> pipeline.objectEncoding(key));
-
-		return encoding != null ? JedisConverters.toEncoding(encoding) : RedisValueEncoding.VACANT;
+				pipeline -> pipeline.objectEncoding(key),
+				JedisConverters::toEncoding,
+				() -> RedisValueEncoding.VACANT);
 	}
 
 	@Override

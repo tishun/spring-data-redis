@@ -60,6 +60,7 @@ import org.springframework.data.redis.connection.stream.StreamRecords;
  * @author Mark Paluch
  * @author Jeonggyu Choi
  * @author Viktoriya Kutsarova
+ * @author Tihomir Mateev
  * @since 2.3
  */
 class StreamConverters {
@@ -113,10 +114,23 @@ class StreamConverters {
 		return sources;
 	}
 
+	/**
+	 * @deprecated Use {@link #toStreamOffsetsMap(StreamOffset[])} instead for Jedis 7.2+ xreadBinary API
+	 */
+	@Deprecated
 	static Map.Entry<byte[], byte[]>[] toStreamOffsets(StreamOffset<byte[]>[] streams) {
 		return Arrays.stream(streams)
 				.collect(Collectors.toMap(StreamOffset::getKey, v -> JedisConverters.toBytes(v.getOffset().getOffset())))
 				.entrySet().toArray(new Map.Entry[0]);
+	}
+
+	/**
+	 * Convert StreamOffset array to Map for Jedis 7.2+ xreadBinary/xreadGroupBinary API.
+	 */
+	static Map<byte[], StreamEntryID> toStreamOffsetsMap(StreamOffset<byte[]>[] streams) {
+		return Arrays.stream(streams)
+				.collect(Collectors.toMap(StreamOffset::getKey,
+						v -> new StreamEntryID(v.getOffset().getOffset())));
 	}
 
 	static List<ByteRecord> convertToByteRecord(byte[] key, Object source) {

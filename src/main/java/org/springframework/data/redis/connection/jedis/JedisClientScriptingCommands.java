@@ -57,11 +57,10 @@ class JedisClientScriptingCommands implements RedisScriptingCommands {
 
 		Assert.notNull(script, "Script must not be null");
 
-		byte[] result = connection.execute(
+		return connection.execute(
 				client -> client.scriptLoad(script, SAMPLE_KEY),
-				pipeline -> pipeline.scriptLoad(script, SAMPLE_KEY));
-
-		return result != null ? JedisConverters.toString(result) : null;
+				pipeline -> pipeline.scriptLoad(script, SAMPLE_KEY),
+				JedisConverters::toString);
 	}
 
 	@Override
@@ -88,11 +87,10 @@ class JedisClientScriptingCommands implements RedisScriptingCommands {
 		Assert.notNull(script, "Script must not be null");
 
 		JedisScriptReturnConverter converter = new JedisScriptReturnConverter(returnType);
-		Object result = connection.execute(
+		return (T) connection.execute(
 				client -> client.eval(script, numKeys, keysAndArgs),
-				pipeline -> pipeline.eval(script, numKeys, keysAndArgs));
-
-		return (T) (result != null ? converter.convert(result) : converter.convert(null));
+				pipeline -> pipeline.eval(script, numKeys, keysAndArgs),
+                converter, () -> converter.convert(null));
 	}
 
 	@Override
@@ -109,11 +107,10 @@ class JedisClientScriptingCommands implements RedisScriptingCommands {
 		Assert.notNull(scriptSha, "Script digest must not be null");
 
 		JedisScriptReturnConverter converter = new JedisScriptReturnConverter(returnType);
-		Object result = connection.execute(
+		return (T) connection.execute(
 				client -> client.evalsha(scriptSha, numKeys, keysAndArgs),
-				pipeline -> pipeline.evalsha(scriptSha, numKeys, keysAndArgs));
-
-		return (T) (result != null ? converter.convert(result) : converter.convert(null));
+				pipeline -> pipeline.evalsha(scriptSha, numKeys, keysAndArgs),
+                converter, () -> converter.convert(null));
 	}
 
 }

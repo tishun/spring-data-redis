@@ -15,6 +15,7 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.args.SaveMode;
 import redis.clients.jedis.params.MigrateParams;
 
@@ -27,11 +28,40 @@ import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisServerCommands;
-import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
 
+import static org.springframework.data.redis.connection.convert.Converters.toProperties;
+import static org.springframework.data.redis.connection.jedis.JedisConverters.*;
+import static org.springframework.data.redis.connection.jedis.JedisConverters.toBytes;
+import static org.springframework.data.redis.connection.jedis.JedisConverters.toTime;
+import static redis.clients.jedis.Protocol.Command.*;
+import static redis.clients.jedis.Protocol.Keyword.RESETSTAT;
+import static redis.clients.jedis.Protocol.Keyword.REWRITE;
+import static redis.clients.jedis.Protocol.Keyword.KILL;
+import static redis.clients.jedis.Protocol.Keyword.SETNAME;
+import static redis.clients.jedis.Protocol.Keyword.GETNAME;
+import static redis.clients.jedis.Protocol.Keyword.LIST;
+import static redis.clients.jedis.Protocol.Keyword.NO;
+import static redis.clients.jedis.Protocol.Keyword.ONE;
+
+
 /**
+ * Implementation of {@link RedisServerCommands} for {@link JedisClientConnection}.
+ * <p>
+ * <b>Note:</b> Many server commands in this class use {@code sendCommand} to send raw Redis protocol commands
+ * because the corresponding APIs are missing from the {@link UnifiedJedis} interface. These methods exist in the
+ * legacy {@code Jedis} class but have not been exposed through {@code UnifiedJedis} as of Jedis 7.2.
+ * Once these APIs are added to {@code UnifiedJedis}, the implementations should be updated to use the proper
+ * API methods instead of raw commands.
+ * <p>
+ * Missing APIs include: {@code bgrewriteaof()}, {@code bgsave()}, {@code lastsave()}, {@code save()},
+ * {@code dbSize()}, {@code flushDB(FlushMode)}, {@code flushAll(FlushMode)}, {@code shutdown()},
+ * {@code shutdown(SaveMode)}, {@code configGet(String)}, {@code configSet(String, String)},
+ * {@code configResetStat()}, {@code configRewrite()}, {@code time()}, {@code clientKill(String)},
+ * {@code clientSetname(byte[])}, {@code clientGetname()}, {@code clientList()}, {@code replicaof(String, int)},
+ * and {@code replicaofNoOne()}.
+ *
  * @author Tihomir Mateev
  * @since 4.1
  */
@@ -46,53 +76,78 @@ class JedisClientServerCommands implements RedisServerCommands {
 
 	@Override
 	public void bgReWriteAof() {
-		connection.execute("BGREWRITEAOF");
+		connection.execute(
+				client -> client.sendCommand(BGREWRITEAOF, new byte[0][]),
+				pipeline -> pipeline.sendCommand(BGREWRITEAOF, new byte[0][]));
 	}
 
 	@Override
 	public void bgSave() {
-		connection.execute("BGSAVE");
+		connection.executeStatus(
+				client -> client.sendCommand(BGSAVE, new byte[0][]),
+				pipeline -> pipeline.sendCommand(BGSAVE, new byte[0][]));
 	}
 
 	@Override
 	public Long lastSave() {
-		return (Long) connection.execute("LASTSAVE");
+		return connection.execute(
+				client -> client.sendCommand(LASTSAVE, new byte[0][]),
+				pipeline -> pipeline.sendCommand(LASTSAVE, new byte[0][]),
+				result -> (Long) result);
 	}
 
 	@Override
 	public void save() {
-		connection.execute("SAVE");
+		connection.executeStatus(
+				client -> client.sendCommand(SAVE, new byte[0][]),
+				pipeline -> pipeline.sendCommand(SAVE, new byte[0][]));
 	}
 
 	@Override
 	public Long dbSize() {
-		return (Long) connection.execute("DBSIZE");
+		return connection.execute(
+				client -> client.sendCommand(DBSIZE, new byte[0][]),
+				pipeline -> pipeline.sendCommand(DBSIZE, new byte[0][]),
+				result -> (Long) result);
 	}
 
 	@Override
 	public void flushDb() {
-		connection.execute("FLUSHDB");
+		connection.executeStatus(
+                UnifiedJedis::flushDB,
+				pipeline -> pipeline.sendCommand(FLUSHDB, new byte[0][]));
 	}
 
 	@Override
 	public void flushDb(@NonNull FlushOption option) {
-		connection.execute("FLUSHDB", JedisConverters.toBytes(JedisConverters.toFlushMode(option).toString()));
+		connection.executeStatus(
+				client -> client.sendCommand(FLUSHDB, toBytes(toFlushMode(option).toString())),
+				pipeline -> pipeline.sendCommand(FLUSHDB, toBytes(toFlushMode(option).toString())));
 	}
 
 	@Override
 	public void flushAll() {
-		connection.execute("FLUSHALL");
+		connection.executeStatus(
+                UnifiedJedis::flushAll,
+				pipeline -> pipeline.sendCommand(FLUSHALL, new byte[0][]));
 	}
 
 	@Override
 	public void flushAll(@NonNull FlushOption option) {
-		connection.execute("FLUSHALL", JedisConverters.toBytes(JedisConverters.toFlushMode(option).toString()));
+		connection.executeStatus(
+				client -> client.sendCommand(FLUSHALL, toBytes(toFlushMode(option).toString())),
+				pipeline -> pipeline.sendCommand(FLUSHALL, toBytes(toFlushMode(option).toString())));
 	}
 
 	@Override
 	public Properties info() {
-		String result = JedisConverters.toString((byte[]) connection.execute("INFO"));
-		return result != null ? JedisConverters.toProperties(result) : new Properties();
+		return connection.execute(
+                UnifiedJedis::info,
+				pipeline -> pipeline.sendCommand(INFO, new byte[0][]),
+				result -> {
+					String str = result instanceof String ? (String) result : JedisConverters.toString((byte[]) result);
+					return toProperties(str);
+				});
 	}
 
 	@Override
@@ -100,13 +155,20 @@ class JedisClientServerCommands implements RedisServerCommands {
 
 		Assert.notNull(section, "Section must not be null");
 
-		String result = JedisConverters.toString((byte[]) connection.execute("INFO", JedisConverters.toBytes(section)));
-		return result != null ? JedisConverters.toProperties(result) : new Properties();
+		return connection.execute(
+				client -> client.info(section),
+				pipeline -> pipeline.sendCommand(INFO, toBytes(section)),
+				result -> {
+					String str = result instanceof String ? (String) result : JedisConverters.toString((byte[]) result);
+					return toProperties(str);
+				});
 	}
 
 	@Override
 	public void shutdown() {
-		connection.execute("SHUTDOWN");
+		connection.execute(
+				client -> client.sendCommand(SHUTDOWN, new byte[0][]),
+				pipeline -> pipeline.sendCommand(SHUTDOWN, new byte[0][]));
 	}
 
 	@Override
@@ -118,7 +180,9 @@ class JedisClientServerCommands implements RedisServerCommands {
 		}
 
 		SaveMode saveMode = (option == ShutdownOption.NOSAVE) ? SaveMode.NOSAVE : SaveMode.SAVE;
-		connection.execute("SHUTDOWN", JedisConverters.toBytes(saveMode.toString()));
+		connection.execute(
+				client -> client.sendCommand(SHUTDOWN, toBytes(saveMode.toString())),
+				pipeline -> pipeline.sendCommand(SHUTDOWN, toBytes(saveMode.toString())));
 	}
 
 	@Override
@@ -126,20 +190,17 @@ class JedisClientServerCommands implements RedisServerCommands {
 
 		Assert.notNull(pattern, "Pattern must not be null");
 
-		@SuppressWarnings("unchecked")
-		List<byte[]> result = (List<byte[]>) connection.execute(
-				client -> client.sendCommand(redis.clients.jedis.Protocol.Command.CONFIG, JedisConverters.toBytes("GET"), JedisConverters.toBytes(pattern)),
-				pipeline -> pipeline.sendCommand(redis.clients.jedis.Protocol.Command.CONFIG, JedisConverters.toBytes("GET"), JedisConverters.toBytes(pattern)));
-
-		if (result == null) {
-			return new Properties();
-		}
-
-		List<String> stringResult = result.stream()
-				.map(JedisConverters::toString)
-				.toList();
-
-		return Converters.toProperties(stringResult);
+		return connection.execute(
+				client -> client.sendCommand(CONFIG, toBytes(GET.toString()), toBytes(pattern)),
+				pipeline -> pipeline.sendCommand(CONFIG, toBytes(GET.toString()), toBytes(pattern)),
+				result -> {
+					@SuppressWarnings("unchecked")
+					List<byte[]> byteList = (List<byte[]>) result;
+                    List<String> stringResult = byteList.stream()
+							.map(JedisConverters::toString)
+							.toList();
+					return toProperties(stringResult);
+				});
 	}
 
 	@Override
@@ -148,17 +209,23 @@ class JedisClientServerCommands implements RedisServerCommands {
 		Assert.notNull(param, "Parameter must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		connection.execute("CONFIG", JedisConverters.toBytes("SET"), JedisConverters.toBytes(param), JedisConverters.toBytes(value));
+		connection.execute(
+				client -> client.sendCommand(CONFIG, toBytes(SET.toString()), toBytes(param), toBytes(value)),
+				pipeline -> pipeline.sendCommand(CONFIG, toBytes(SET.toString()), toBytes(param), toBytes(value)));
 	}
 
 	@Override
 	public void resetConfigStats() {
-		connection.execute("CONFIG", JedisConverters.toBytes("RESETSTAT"));
+		connection.execute(
+				client -> client.sendCommand(CONFIG, toBytes(RESETSTAT.toString())),
+				pipeline -> pipeline.sendCommand(CONFIG, toBytes(RESETSTAT.toString())));
 	}
 
 	@Override
 	public void rewriteConfig() {
-		connection.execute("CONFIG", JedisConverters.toBytes("REWRITE"));
+		connection.execute(
+				client -> client.sendCommand(CONFIG, toBytes(REWRITE.toString())),
+				pipeline -> pipeline.sendCommand(CONFIG, toBytes(REWRITE.toString())));
 	}
 
 	@Override
@@ -166,20 +233,17 @@ class JedisClientServerCommands implements RedisServerCommands {
 
 		Assert.notNull(timeUnit, "TimeUnit must not be null");
 
-		@SuppressWarnings("unchecked")
-		List<byte[]> result = (List<byte[]>) connection.execute(
-				client -> client.sendCommand(redis.clients.jedis.Protocol.Command.TIME, new byte[0][]),
-				pipeline -> pipeline.sendCommand(redis.clients.jedis.Protocol.Command.TIME, new byte[0][]));
-
-		if (result == null) {
-			return null;
-		}
-
-		List<String> stringResult = result.stream()
-				.map(JedisConverters::toString)
-				.toList();
-
-		return JedisConverters.toTime(stringResult, timeUnit);
+		return connection.execute(
+				client -> client.sendCommand(TIME, new byte[0][]),
+				pipeline -> pipeline.sendCommand(TIME, new byte[0][]),
+				result -> {
+					@SuppressWarnings("unchecked")
+					List<byte[]> byteList = (List<byte[]>) result;
+                    List<String> stringResult = byteList.stream()
+							.map(JedisConverters::toString)
+							.toList();
+					return toTime(stringResult, timeUnit);
+				});
 	}
 
 	@Override
@@ -187,7 +251,9 @@ class JedisClientServerCommands implements RedisServerCommands {
 
 		Assert.hasText(host, "Host for 'CLIENT KILL' must not be 'null' or 'empty'");
 
-		connection.execute("CLIENT", JedisConverters.toBytes("KILL"), JedisConverters.toBytes("%s:%s".formatted(host, port)));
+		connection.execute(
+				client -> client.sendCommand(CLIENT, toBytes(KILL.toString()), toBytes("%s:%s".formatted(host, port))),
+				pipeline -> pipeline.sendCommand(CLIENT, toBytes(KILL.toString()), toBytes("%s:%s".formatted(host, port))));
 	}
 
 	@Override
@@ -195,18 +261,28 @@ class JedisClientServerCommands implements RedisServerCommands {
 
 		Assert.notNull(name, "Name must not be null");
 
-		connection.execute("CLIENT", JedisConverters.toBytes("SETNAME"), name);
+		connection.execute(
+				client -> client.sendCommand(CLIENT, toBytes(SETNAME.toString()), name),
+				pipeline -> pipeline.sendCommand(CLIENT, toBytes(SETNAME.toString()), name));
 	}
 
 	@Override
 	public String getClientName() {
-		return JedisConverters.toString((byte[]) connection.execute("CLIENT", JedisConverters.toBytes("GETNAME")));
+		return connection.execute(
+				client -> client.sendCommand(CLIENT, toBytes(GETNAME.toString())),
+				pipeline -> pipeline.sendCommand(CLIENT, toBytes(GETNAME.toString())),
+				result -> JedisConverters.toString((byte[]) result));
 	}
 
 	@Override
 	public List<@NonNull RedisClientInfo> getClientList() {
-		String result = JedisConverters.toString((byte[]) connection.execute("CLIENT", JedisConverters.toBytes("LIST")));
-		return result != null ? JedisConverters.toListOfRedisClientInformation(result) : null;
+		return connection.execute(
+				client -> client.sendCommand(CLIENT, toBytes(LIST.toString())),
+				pipeline -> pipeline.sendCommand(CLIENT, toBytes(LIST.toString())),
+				result -> {
+					String str = JedisConverters.toString((byte[]) result);
+					return toListOfRedisClientInformation(str);
+				});
 	}
 
 	@Override
@@ -214,12 +290,16 @@ class JedisClientServerCommands implements RedisServerCommands {
 
 		Assert.hasText(host, "Host must not be null for 'REPLICAOF' command");
 
-		connection.execute("REPLICAOF", JedisConverters.toBytes(host), JedisConverters.toBytes(String.valueOf(port)));
+		connection.execute(
+				client -> client.sendCommand(REPLICAOF, toBytes(host), toBytes(String.valueOf(port))),
+				pipeline -> pipeline.sendCommand(REPLICAOF, toBytes(host), toBytes(String.valueOf(port))));
 	}
 
 	@Override
 	public void replicaOfNoOne() {
-		connection.execute("REPLICAOF", JedisConverters.toBytes("NO"), JedisConverters.toBytes("ONE"));
+		connection.execute(
+				client -> client.sendCommand(REPLICAOF, toBytes(NO.toString()), toBytes(ONE.toString())),
+				pipeline -> pipeline.sendCommand(REPLICAOF, toBytes(NO.toString()), toBytes(ONE.toString())));
 	}
 
 	@Override

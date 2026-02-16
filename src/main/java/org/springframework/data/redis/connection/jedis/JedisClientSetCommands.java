@@ -186,11 +186,10 @@ class JedisClientSetCommands implements RedisSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		Set<byte[]> result = connection.execute(
+		return connection.execute(
 				client -> client.spop(key, count),
-				pipeline -> pipeline.spop(key, count));
-
-		return result != null ? new ArrayList<>(result) : null;
+				pipeline -> pipeline.spop(key, count),
+                ArrayList::new);
 	}
 
 	@Override

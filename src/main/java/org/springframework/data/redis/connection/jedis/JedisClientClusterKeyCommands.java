@@ -164,7 +164,6 @@ class JedisClientClusterKeyCommands implements RedisKeyCommands {
 	 * @param node must not be {@literal null}.
 	 * @param options must not be {@literal null}.
 	 * @return never {@literal null}.
-	 * @since 2.1
 	 */
 	Cursor<byte @NonNull []> scan(@NonNull RedisClusterNode node, @NonNull ScanOptions options) {
 

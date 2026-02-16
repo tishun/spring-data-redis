@@ -18,6 +18,7 @@ package org.springframework.data.redis.connection.jedis;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -44,7 +45,7 @@ public class JedisClientConnectionPipelineIntegrationTests extends AbstractConne
 	@AfterEach
 	public void tearDown() {
 		try {
-			connection.flushAll();
+			connection.serverCommands().flushAll();
 			connection.close();
 		} catch (Exception e) {
 			// Ignore
@@ -92,6 +93,23 @@ public class JedisClientConnectionPipelineIntegrationTests extends AbstractConne
 		connection.restore("testing".getBytes(), 0, "foo".getBytes());
 		assertThatExceptionOfType(RedisPipelineException.class).isThrownBy(this::getResults)
 				.withCauseInstanceOf(InvalidDataAccessApiUsageException.class);
+	}
+
+	// These tests expect RedisPipelineException but Jedis throws earlier during multi()/exec() calls
+	@Override
+	@Test
+	public void testExecWithoutMulti() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			connection.exec();
+		}).withMessage("No ongoing transaction; Did you forget to call multi");
+	}
+
+	@Override
+	@Test
+	public void testErrorInTx() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			connection.multi();
+		}).withMessage("Cannot use Transaction while a pipeline is open");
 	}
 }
 

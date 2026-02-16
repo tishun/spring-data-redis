@@ -16,14 +16,18 @@
 package org.springframework.data.redis.connection.jedis;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.redis.SettingsUtils;
+import org.springframework.data.redis.connection.ClusterCommandExecutor;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.core.types.RedisClientInfo;
+import org.springframework.data.redis.test.condition.EnabledOnRedisClusterAvailable;
 import org.springframework.data.redis.util.ConnectionVerifier;
 import org.springframework.data.redis.util.RedisClientLibraryInfo;
 
@@ -147,6 +151,22 @@ class JedisClientConnectionFactoryIntegrationTests {
 					assertThat(connection.ping()).isEqualTo("PONG");
 				}) //
 				.verifyAndClose();
+	}
+
+	@Test // GH-XXXX
+	@EnabledOnRedisClusterAvailable
+	void configuresExecutorCorrectlyForCluster() {
+
+		AsyncTaskExecutor mockTaskExecutor = mock(AsyncTaskExecutor.class);
+
+		factory = new JedisClientConnectionFactory(SettingsUtils.clusterConfiguration());
+		factory.setExecutor(mockTaskExecutor);
+		factory.start();
+
+		ClusterCommandExecutor clusterCommandExecutor = factory.getRequiredClusterCommandExecutor();
+		assertThat(clusterCommandExecutor).extracting("executor").isEqualTo(mockTaskExecutor);
+
+		factory.destroy();
 	}
 }
 

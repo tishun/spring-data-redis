@@ -42,6 +42,12 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.util.Assert;
 
+import static org.springframework.data.redis.connection.ExpirationOptions.Condition.ALWAYS;
+import static org.springframework.data.redis.connection.convert.Converters.*;
+import static org.springframework.data.redis.connection.jedis.JedisConverters.*;
+import static org.springframework.data.redis.core.Cursor.CursorId.of;
+import static redis.clients.jedis.args.ExpiryOption.valueOf;
+
 /**
  * {@link RedisHashCommands} implementation for Jedis.
  *
@@ -67,7 +73,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		return connection.execute(
 				client -> client.hset(key, field, value),
 				pipeline -> pipeline.hset(key, field, value),
-				JedisConverters.longToBoolean());
+				longToBoolean());
 	}
 
 	@Override
@@ -80,7 +86,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		return connection.execute(
 				client -> client.hsetnx(key, field, value),
 				pipeline -> pipeline.hsetnx(key, field, value),
-				JedisConverters.longToBoolean());
+				longToBoolean());
 	}
 
 	@Override
@@ -142,11 +148,10 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		List<Entry<byte[], byte[]>> result = connection.execute(
+		return connection.execute(
 				client -> client.hrandfieldWithValues(key, 1L),
-				pipeline -> pipeline.hrandfieldWithValues(key, 1L));
-
-		return (result != null && !result.isEmpty()) ? result.get(0) : null;
+				pipeline -> pipeline.hrandfieldWithValues(key, 1L),
+                result -> !result.isEmpty() ? result.get(0) : null);
 	}
 
 	@Nullable
@@ -176,7 +181,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		}
 
 		List<Entry<byte[], byte[]>> convertedMapEntryList = new ArrayList<>(mapEntryList.size());
-		mapEntryList.forEach(entry -> convertedMapEntryList.add(Converters.entryOf(entry.getKey(), entry.getValue())));
+		mapEntryList.forEach(entry -> convertedMapEntryList.add(entryOf(entry.getKey(), entry.getValue())));
 		return convertedMapEntryList;
 	}
 
@@ -274,11 +279,11 @@ class JedisClientHashCommands implements RedisHashCommands {
 					throw new InvalidDataAccessApiUsageException("'HSCAN' cannot be called in pipeline / transaction mode");
 				}
 
-				ScanParams params = JedisConverters.toScanParams(options);
+				ScanParams params = toScanParams(options);
 
-				ScanResult<Entry<byte[], byte[]>> result = connection.getJedis().hscan(key, JedisConverters.toBytes(cursorId),
+				ScanResult<Entry<byte[], byte[]>> result = connection.getJedis().hscan(key, toBytes(cursorId),
 						params);
-				return new ScanIteration<>(CursorId.of(result.getCursor()), result.getResult());
+				return new ScanIteration<>(of(result.getCursor()), result.getResult());
 			}
 
 			@Override
@@ -293,13 +298,13 @@ class JedisClientHashCommands implements RedisHashCommands {
 	public List<@NonNull Long> hExpire(byte @NonNull [] key, long seconds, ExpirationOptions.@NonNull Condition condition,
 			byte @NonNull [] @NonNull... fields) {
 
-		if (condition == ExpirationOptions.Condition.ALWAYS) {
+		if (condition == ALWAYS) {
 			return connection.execute(
 					client -> client.hexpire(key, seconds, fields),
 					pipeline -> pipeline.hexpire(key, seconds, fields));
 		}
 
-		ExpiryOption option = ExpiryOption.valueOf(condition.name());
+		ExpiryOption option = valueOf(condition.name());
 		return connection.execute(
 				client -> client.hexpire(key, seconds, option, fields),
 				pipeline -> pipeline.hexpire(key, seconds, option, fields));
@@ -309,13 +314,13 @@ class JedisClientHashCommands implements RedisHashCommands {
 	public List<@NonNull Long> hpExpire(byte @NonNull [] key, long millis, ExpirationOptions.@NonNull Condition condition,
 			byte @NonNull [] @NonNull... fields) {
 
-		if (condition == ExpirationOptions.Condition.ALWAYS) {
+		if (condition == ALWAYS) {
 			return connection.execute(
 					client -> client.hpexpire(key, millis, fields),
 					pipeline -> pipeline.hpexpire(key, millis, fields));
 		}
 
-		ExpiryOption option = ExpiryOption.valueOf(condition.name());
+		ExpiryOption option = valueOf(condition.name());
 		return connection.execute(
 				client -> client.hpexpire(key, millis, option, fields),
 				pipeline -> pipeline.hpexpire(key, millis, option, fields));
@@ -325,13 +330,13 @@ class JedisClientHashCommands implements RedisHashCommands {
 	public List<@NonNull Long> hExpireAt(byte @NonNull [] key, long unixTime,
 			ExpirationOptions.@NonNull Condition condition, byte @NonNull [] @NonNull... fields) {
 
-		if (condition == ExpirationOptions.Condition.ALWAYS) {
+		if (condition == ALWAYS) {
 			return connection.execute(
 					client -> client.hexpireAt(key, unixTime, fields),
 					pipeline -> pipeline.hexpireAt(key, unixTime, fields));
 		}
 
-		ExpiryOption option = ExpiryOption.valueOf(condition.name());
+		ExpiryOption option = valueOf(condition.name());
 		return connection.execute(
 				client -> client.hexpireAt(key, unixTime, option, fields),
 				pipeline -> pipeline.hexpireAt(key, unixTime, option, fields));
@@ -341,13 +346,13 @@ class JedisClientHashCommands implements RedisHashCommands {
 	public List<@NonNull Long> hpExpireAt(byte @NonNull [] key, long unixTimeInMillis,
 			ExpirationOptions.@NonNull Condition condition, byte @NonNull [] @NonNull... fields) {
 
-		if (condition == ExpirationOptions.Condition.ALWAYS) {
+		if (condition == ALWAYS) {
 			return connection.execute(
 					client -> client.hpexpireAt(key, unixTimeInMillis, fields),
 					pipeline -> pipeline.hpexpireAt(key, unixTimeInMillis, fields));
 		}
 
-		ExpiryOption option = ExpiryOption.valueOf(condition.name());
+		ExpiryOption option = valueOf(condition.name());
 		return connection.execute(
 				client -> client.hpexpireAt(key, unixTimeInMillis, option, fields),
 				pipeline -> pipeline.hpexpireAt(key, unixTimeInMillis, option, fields));
@@ -380,7 +385,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		List<Long> converted = new ArrayList<>(result.size());
 		for (Long value : result) {
-			converted.add(value != null ? Converters.secondsToTimeUnit(timeUnit).convert(value) : null);
+			converted.add(value != null ? secondsToTimeUnit(timeUnit).convert(value) : null);
 		}
 		return converted;
 	}
@@ -411,8 +416,8 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(fields, "Fields must not be null");
 
 		return connection.execute(
-				client -> client.hgetex(key, JedisConverters.toHGetExParams(expiration), fields),
-				pipeline -> pipeline.hgetex(key, JedisConverters.toHGetExParams(expiration), fields));
+				client -> client.hgetex(key, toHGetExParams(expiration), fields),
+				pipeline -> pipeline.hgetex(key, toHGetExParams(expiration), fields));
 	}
 
 	@Override
@@ -424,8 +429,8 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(condition, "Condition must not be null");
 
 		return connection.execute(
-				client -> client.hsetex(key, JedisConverters.toHSetExParams(condition, expiration), hashes),
-				pipeline -> pipeline.hsetex(key, JedisConverters.toHSetExParams(condition, expiration), hashes),
+				client -> client.hsetex(key, toHSetExParams(condition, expiration), hashes),
+				pipeline -> pipeline.hsetex(key, toHSetExParams(condition, expiration), hashes),
 				Converters::toBoolean);
 	}
 

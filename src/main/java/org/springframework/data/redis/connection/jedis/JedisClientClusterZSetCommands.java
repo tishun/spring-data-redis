@@ -862,7 +862,7 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 		if (ClusterSlotHashUtil.isSameSlotForAllKeys(allKeys)) {
 
 			try {
-				return connection.getClusterClient().zdiffStore(destKey, sets);
+				return connection.getClusterClient().zdiffstore(destKey, sets);
 			} catch (Exception ex) {
 				throw convertJedisAccessException(ex);
 			}

@@ -32,6 +32,9 @@ import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.util.Assert;
 
+import static org.springframework.data.redis.connection.jedis.JedisConverters.toBitOp;
+import static org.springframework.data.redis.connection.jedis.JedisConverters.toBitfieldCommandArguments;
+
 /**
  * @author Tihomir Mateev
  * @since 4.1
@@ -122,11 +125,11 @@ class JedisClientStringCommands implements RedisStringCommands {
 		SetParams params = JedisConverters.toSetCommandExPxArgument(expiration,
 				JedisConverters.toSetCommandNxXxArgument(option));
 
-		String result = connection.execute(
+		return connection.execute(
 				client -> client.set(key, value, params),
-				pipeline -> pipeline.set(key, value, params));
-
-		return result != null ? Converters.stringToBooleanConverter().convert(result) : false;
+				pipeline -> pipeline.set(key, value, params),
+                Converters.stringToBooleanConverter(),
+				() -> false);
 	}
 
 	@Override
@@ -168,11 +171,11 @@ class JedisClientStringCommands implements RedisStringCommands {
 			throw new IllegalArgumentException("Time must be less than Integer.MAX_VALUE for setEx in Jedis");
 		}
 
-		String result = connection.execute(
+		return connection.execute(
 				client -> client.setex(key, seconds, value),
-				pipeline -> pipeline.setex(key, seconds, value));
-
-		return result != null ? Converters.stringToBooleanConverter().convert(result) : false;
+				pipeline -> pipeline.setex(key, seconds, value),
+                Converters.stringToBooleanConverter(),
+				() -> false);
 	}
 
 	@Override
@@ -181,11 +184,11 @@ class JedisClientStringCommands implements RedisStringCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		String result = connection.execute(
+		return connection.execute(
 				client -> client.psetex(key, milliseconds, value),
-				pipeline -> pipeline.psetex(key, milliseconds, value));
-
-		return result != null ? Converters.stringToBooleanConverter().convert(result) : false;
+				pipeline -> pipeline.psetex(key, milliseconds, value),
+                Converters.stringToBooleanConverter(),
+				() -> false);
 	}
 
 	@Override
@@ -339,8 +342,8 @@ class JedisClientStringCommands implements RedisStringCommands {
 		Assert.notNull(subCommands, "Command must not be null");
 
 		return connection.execute(
-				client -> client.bitfield(key, JedisConverters.toBitfieldCommandArguments(subCommands)),
-				pipeline -> pipeline.bitfield(key, JedisConverters.toBitfieldCommandArguments(subCommands)));
+				client -> client.bitfield(key, toBitfieldCommandArguments(subCommands)),
+				pipeline -> pipeline.bitfield(key, toBitfieldCommandArguments(subCommands)));
 	}
 
 	@Override
@@ -354,8 +357,8 @@ class JedisClientStringCommands implements RedisStringCommands {
 		}
 
 		return connection.execute(
-				client -> client.bitop(JedisConverters.toBitOp(op), destination, keys),
-				pipeline -> pipeline.bitop(JedisConverters.toBitOp(op), destination, keys));
+				client -> client.bitop(toBitOp(op), destination, keys),
+				pipeline -> pipeline.bitop(toBitOp(op), destination, keys));
 	}
 
 	@Override

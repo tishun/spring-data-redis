@@ -39,6 +39,9 @@ import org.springframework.data.redis.domain.geo.GeoReference;
 import org.springframework.data.redis.domain.geo.GeoShape;
 import org.springframework.util.Assert;
 
+import static org.springframework.data.redis.connection.convert.Converters.distanceConverterForMetric;
+import static org.springframework.data.redis.connection.jedis.JedisConverters.*;
+
 /**
  * @author Tihomir Mateev
  * @since 4.1
@@ -73,7 +76,7 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Map<byte[], GeoCoordinate> redisGeoCoordinateMap = new HashMap<>();
 
 		for (byte[] mapKey : memberCoordinateMap.keySet()) {
-			redisGeoCoordinateMap.put(mapKey, JedisConverters.toGeoCoordinate(memberCoordinateMap.get(mapKey)));
+			redisGeoCoordinateMap.put(mapKey, toGeoCoordinate(memberCoordinateMap.get(mapKey)));
 		}
 
 		return connection.execute(
@@ -90,7 +93,7 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Map<byte[], GeoCoordinate> redisGeoCoordinateMap = new HashMap<>();
 
 		for (GeoLocation<byte[]> location : locations) {
-			redisGeoCoordinateMap.put(location.getName(), JedisConverters.toGeoCoordinate(location.getPoint()));
+			redisGeoCoordinateMap.put(location.getName(), toGeoCoordinate(location.getPoint()));
 		}
 
 		return connection.execute(
@@ -105,7 +108,7 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(member1, "Member1 must not be null");
 		Assert.notNull(member2, "Member2 must not be null");
 
-		Converter<@NonNull Double, Distance> distanceConverter = JedisConverters.distanceConverterForMetric(DistanceUnit.METERS);
+		Converter<@NonNull Double, Distance> distanceConverter = distanceConverterForMetric(DistanceUnit.METERS);
 
 		return connection.execute(
 				client -> client.geodist(key, member1, member2),
@@ -122,8 +125,8 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(member2, "Member2 must not be null");
 		Assert.notNull(metric, "Metric must not be null");
 
-		GeoUnit geoUnit = JedisConverters.toGeoUnit(metric);
-		Converter<@NonNull Double, Distance> distanceConverter = JedisConverters.distanceConverterForMetric(metric);
+		GeoUnit geoUnit = toGeoUnit(metric);
+		Converter<@NonNull Double, Distance> distanceConverter = distanceConverterForMetric(metric);
 
 		return connection.execute(
 				client -> client.geodist(key, member1, member2, geoUnit),
@@ -138,11 +141,10 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(members, "Members must not be null");
 		Assert.noNullElements(members, "Members must not contain null");
 
-		List<byte[]> result = connection.execute(
+		return connection.execute(
 				client -> client.geohash(key, members),
-				pipeline -> pipeline.geohash(key, members));
-
-        return JedisConverters.toStrings(result);
+				pipeline -> pipeline.geohash(key, members),
+				JedisConverters::toStrings);
 	}
 
 	@Override
@@ -152,19 +154,16 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(members, "Members must not be null");
 		Assert.noNullElements(members, "Members must not contain null");
 
-		List<GeoCoordinate> result = connection.execute(
+		return connection.execute(
 				client -> client.geopos(key, members),
-				pipeline -> pipeline.geopos(key, members));
-
-		if (result == null) {
-			return null;
-		}
-
-		List<Point> points = new ArrayList<>(result.size());
-		for (GeoCoordinate coord : result) {
-			points.add(JedisConverters.toPoint(coord));
-		}
-		return points;
+				pipeline -> pipeline.geopos(key, members),
+				result -> {
+                    List<Point> points = new ArrayList<>(result.size());
+					for (GeoCoordinate cord : result) {
+						points.add(JedisConverters.toPoint(cord));
+					}
+					return points;
+				});
 	}
 
 	@Override
@@ -173,14 +172,14 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(within, "Within must not be null");
 
-		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter = JedisConverters
-				.geoRadiusResponseToGeoResultsConverter(within.getRadius().getMetric());
+		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter =
+				geoRadiusResponseToGeoResultsConverter(within.getRadius().getMetric());
 
 		return connection.execute(
 				client -> client.georadius(key, within.getCenter().getX(), within.getCenter().getY(),
-						within.getRadius().getValue(), JedisConverters.toGeoUnit(within.getRadius().getMetric())),
+						within.getRadius().getValue(), toGeoUnit(within.getRadius().getMetric())),
 				pipeline -> pipeline.georadius(key, within.getCenter().getX(), within.getCenter().getY(),
-						within.getRadius().getValue(), JedisConverters.toGeoUnit(within.getRadius().getMetric())),
+						within.getRadius().getValue(), toGeoUnit(within.getRadius().getMetric())),
 				converter);
 	}
 
@@ -192,15 +191,15 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(within, "Within must not be null");
 		Assert.notNull(args, "Args must not be null");
 
-		GeoRadiusParam geoRadiusParam = JedisConverters.toGeoRadiusParam(args);
-		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter = JedisConverters
-				.geoRadiusResponseToGeoResultsConverter(within.getRadius().getMetric());
+		GeoRadiusParam geoRadiusParam = toGeoRadiusParam(args);
+		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter =
+				geoRadiusResponseToGeoResultsConverter(within.getRadius().getMetric());
 
 		return connection.execute(
 				client -> client.georadius(key, within.getCenter().getX(), within.getCenter().getY(),
-						within.getRadius().getValue(), JedisConverters.toGeoUnit(within.getRadius().getMetric()), geoRadiusParam),
+						within.getRadius().getValue(), toGeoUnit(within.getRadius().getMetric()), geoRadiusParam),
 				pipeline -> pipeline.georadius(key, within.getCenter().getX(), within.getCenter().getY(),
-						within.getRadius().getValue(), JedisConverters.toGeoUnit(within.getRadius().getMetric()), geoRadiusParam),
+						within.getRadius().getValue(), toGeoUnit(within.getRadius().getMetric()), geoRadiusParam),
 				converter);
 	}
 
@@ -212,9 +211,9 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(member, "Member must not be null");
 		Assert.notNull(radius, "Radius must not be null");
 
-		GeoUnit geoUnit = JedisConverters.toGeoUnit(radius.getMetric());
-		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter = JedisConverters
-				.geoRadiusResponseToGeoResultsConverter(radius.getMetric());
+		GeoUnit geoUnit = toGeoUnit(radius.getMetric());
+		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter =
+				geoRadiusResponseToGeoResultsConverter(radius.getMetric());
 
 		return connection.execute(
 				client -> client.georadiusByMember(key, member, radius.getValue(), geoUnit),
@@ -231,10 +230,10 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(radius, "Radius must not be null");
 		Assert.notNull(args, "Args must not be null");
 
-		GeoUnit geoUnit = JedisConverters.toGeoUnit(radius.getMetric());
-		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter = JedisConverters
-				.geoRadiusResponseToGeoResultsConverter(radius.getMetric());
-		GeoRadiusParam geoRadiusParam = JedisConverters.toGeoRadiusParam(args);
+		GeoUnit geoUnit = toGeoUnit(radius.getMetric());
+		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter =
+				geoRadiusResponseToGeoResultsConverter(radius.getMetric());
+		GeoRadiusParam geoRadiusParam = toGeoRadiusParam(args);
 
 		return connection.execute(
 				client -> client.georadiusByMember(key, member, radius.getValue(), geoUnit, geoRadiusParam),
@@ -253,9 +252,9 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		GeoSearchParam param = JedisConverters.toGeoSearchParams(reference, predicate, args);
-		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter = JedisConverters
-				.geoRadiusResponseToGeoResultsConverter(predicate.getMetric());
+		GeoSearchParam param = toGeoSearchParams(reference, predicate, args);
+		Converter<@NonNull List<GeoRadiusResponse>, GeoResults<@NonNull GeoLocation<byte[]>>> converter =
+				geoRadiusResponseToGeoResultsConverter(predicate.getMetric());
 
 		return connection.execute(
 				client -> client.geosearch(key, param),
@@ -270,7 +269,7 @@ class JedisClientGeoCommands implements RedisGeoCommands {
 		Assert.notNull(destKey, "Destination Key must not be null");
 		Assert.notNull(key, "Key must not be null");
 
-		GeoSearchParam param = JedisConverters.toGeoSearchParams(reference, predicate, args);
+		GeoSearchParam param = toGeoSearchParams(reference, predicate, args);
 
 		if (args.isStoreDistance()) {
 			return connection.execute(

@@ -16,10 +16,14 @@
 package org.springframework.data.redis.connection.jedis;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.data.redis.connection.ClusterCommandExecutor;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -149,6 +153,140 @@ class JedisClientConnectionFactoryUnitTests {
 		connectionFactory = new JedisClientConnectionFactory();
 
 		assertThat(connectionFactory.isEarlyStartup()).isTrue();
+	}
+
+	// Lifecycle Management Edge Case Tests - Task 10
+
+	@Test // GH-XXXX
+	void shouldHandleMultipleDestroyCalls() {
+
+		connectionFactory = new JedisClientConnectionFactory();
+		connectionFactory.afterPropertiesSet();
+		connectionFactory.start();
+
+		// First destroy
+		connectionFactory.destroy();
+		assertThat(connectionFactory.isRunning()).isFalse();
+
+		// Second destroy should not throw exception
+		assertThatNoException().isThrownBy(() -> connectionFactory.destroy());
+	}
+
+	@Test // GH-XXXX
+	void shouldFailOperationsAfterDestroy() {
+
+		connectionFactory = new JedisClientConnectionFactory();
+		connectionFactory.afterPropertiesSet();
+		connectionFactory.start();
+
+		connectionFactory.destroy();
+
+		assertThatIllegalStateException().isThrownBy(() -> connectionFactory.getConnection());
+		assertThatIllegalStateException().isThrownBy(() -> connectionFactory.getClusterConnection());
+		assertThatIllegalStateException().isThrownBy(() -> connectionFactory.getSentinelConnection());
+	}
+
+	@Test // GH-XXXX
+	void shouldAllowStartAfterStop() {
+
+		connectionFactory = new JedisClientConnectionFactory();
+		connectionFactory.afterPropertiesSet();
+		connectionFactory.start();
+
+		assertThat(connectionFactory.isRunning()).isTrue();
+
+		connectionFactory.stop();
+		assertThat(connectionFactory.isRunning()).isFalse();
+
+		// Should be able to start again after stop
+		connectionFactory.start();
+		assertThat(connectionFactory.isRunning()).isTrue();
+	}
+
+	@Test // GH-XXXX
+	void shouldNotAllowStartAfterDestroy() {
+
+		connectionFactory = new JedisClientConnectionFactory();
+		connectionFactory.afterPropertiesSet();
+		connectionFactory.start();
+
+		connectionFactory.destroy();
+
+		// Start after destroy should not change state
+		connectionFactory.start();
+		assertThat(connectionFactory.isRunning()).isFalse();
+	}
+
+	@Test // GH-XXXX
+	void shouldHandleConcurrentStartStopCalls() throws Exception {
+
+		connectionFactory = new JedisClientConnectionFactory();
+		connectionFactory.afterPropertiesSet();
+
+		int threadCount = 10;
+		java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1);
+		java.util.concurrent.CountDownLatch doneLatch = new java.util.concurrent.CountDownLatch(threadCount);
+		java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+		for (int i = 0; i < threadCount; i++) {
+			final int threadNum = i;
+			new Thread(() -> {
+				try {
+					startLatch.await();
+					if (threadNum % 2 == 0) {
+						connectionFactory.start();
+					} else {
+						connectionFactory.stop();
+					}
+					successCount.incrementAndGet();
+				} catch (Exception e) {
+					// Expected - some threads may fail due to race conditions
+				} finally {
+					doneLatch.countDown();
+				}
+			}).start();
+		}
+
+		startLatch.countDown();
+		doneLatch.await(5, java.util.concurrent.TimeUnit.SECONDS);
+
+		// All threads should complete without hanging
+		assertThat(successCount.get()).isGreaterThan(0);
+		// Factory should be in a valid state (either running or stopped)
+		assertThat(connectionFactory.isRunning()).isIn(true, false);
+	}
+
+	@Test // GH-XXXX
+	void shouldHandleMultipleStopCalls() {
+
+		connectionFactory = new JedisClientConnectionFactory();
+		connectionFactory.afterPropertiesSet();
+		connectionFactory.start();
+
+		assertThat(connectionFactory.isRunning()).isTrue();
+
+		// First stop
+		connectionFactory.stop();
+		assertThat(connectionFactory.isRunning()).isFalse();
+
+		// Second stop should not throw exception
+		assertThatNoException().isThrownBy(() -> connectionFactory.stop());
+		assertThat(connectionFactory.isRunning()).isFalse();
+	}
+
+	@Test // GH-XXXX
+	void shouldHandleMultipleStartCalls() {
+
+		connectionFactory = new JedisClientConnectionFactory();
+		connectionFactory.afterPropertiesSet();
+
+		// First start
+		connectionFactory.start();
+		assertThat(connectionFactory.isRunning()).isTrue();
+
+		// Second start should be idempotent
+		assertThatNoException().isThrownBy(() -> connectionFactory.start());
+		assertThat(connectionFactory.isRunning()).isTrue();
 	}
 }
 

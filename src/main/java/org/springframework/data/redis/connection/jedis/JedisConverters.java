@@ -110,6 +110,7 @@ import org.springframework.util.StringUtils;
  * @author dengliming
  * @author John Blum
  * @author Viktoriya Kutsarova
+ * @author Tihomir Mateev
  */
 @SuppressWarnings("ConstantConditions")
 abstract class JedisConverters extends Converters {
@@ -358,7 +359,7 @@ abstract class JedisConverters extends Converters {
 		SetParams paramsToUse = params == null ? SetParams.setParams() : params;
 
 		if (expiration.isKeepTtl()) {
-			return paramsToUse.keepttl();
+			return paramsToUse.keepTtl();
 		}
 
 		if (expiration.isPersistent()) {

@@ -27,6 +27,9 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.redis.connection.RedisListCommands;
 import org.springframework.util.Assert;
 
+import static org.springframework.data.redis.connection.jedis.JedisConverters.toListPosition;
+import static redis.clients.jedis.args.ListDirection.valueOf;
+
 /**
  * @author Tihomir Mateev
  * @since 4.1
@@ -65,14 +68,16 @@ class JedisClientListCommands implements RedisListCommands {
 		if (count != null) {
 			return connection.execute(
 					client -> client.lpos(key, element, params, count),
-					pipeline -> pipeline.lpos(key, element, params, count));
+					pipeline -> pipeline.lpos(key, element, params, count),
+					result -> result,
+					Collections::emptyList);
 		}
 
-		Long result = connection.execute(
+		return connection.execute(
 				client -> client.lpos(key, element, params),
-				pipeline -> pipeline.lpos(key, element, params));
-
-		return result != null ? Collections.singletonList(result) : Collections.emptyList();
+				pipeline -> pipeline.lpos(key, element, params),
+				Collections::singletonList,
+				Collections::emptyList);
 	}
 
 	@Override
@@ -155,8 +160,8 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(key, "Key must not be null");
 
 		return connection.execute(
-				client -> client.linsert(key, JedisConverters.toListPosition(where), pivot, value),
-				pipeline -> pipeline.linsert(key, JedisConverters.toListPosition(where), pivot, value));
+				client -> client.linsert(key, toListPosition(where), pivot, value),
+				pipeline -> pipeline.linsert(key, toListPosition(where), pivot, value));
 	}
 
 	@Override
@@ -169,8 +174,8 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(to, "To direction must not be null");
 
 		return connection.execute(
-				client -> client.lmove(sourceKey, destinationKey, ListDirection.valueOf(from.name()), ListDirection.valueOf(to.name())),
-				pipeline -> pipeline.lmove(sourceKey, destinationKey, ListDirection.valueOf(from.name()), ListDirection.valueOf(to.name())));
+				client -> client.lmove(sourceKey, destinationKey, valueOf(from.name()), valueOf(to.name())),
+				pipeline -> pipeline.lmove(sourceKey, destinationKey, valueOf(from.name()), valueOf(to.name())));
 	}
 
 	@Override
@@ -183,8 +188,8 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(to, "To direction must not be null");
 
 		return connection.execute(
-				client -> client.blmove(sourceKey, destinationKey, ListDirection.valueOf(from.name()), ListDirection.valueOf(to.name()), timeout),
-				pipeline -> pipeline.blmove(sourceKey, destinationKey, ListDirection.valueOf(from.name()), ListDirection.valueOf(to.name()), timeout));
+				client -> client.blmove(sourceKey, destinationKey, valueOf(from.name()), valueOf(to.name()), timeout),
+				pipeline -> pipeline.blmove(sourceKey, destinationKey, valueOf(from.name()), valueOf(to.name()), timeout));
 	}
 
 	@Override
