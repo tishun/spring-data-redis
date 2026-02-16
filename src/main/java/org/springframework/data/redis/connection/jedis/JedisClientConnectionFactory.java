@@ -18,7 +18,6 @@ package org.springframework.data.redis.connection.jedis;
 import org.springframework.data.redis.connection.*;
 import redis.clients.jedis.*;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -27,7 +26,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -131,19 +129,6 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
-	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given pool configuration.
-	 *
-	 * @param poolConfig pool configuration
-	 */
-	public JedisClientConnectionFactory(JedisPoolConfig poolConfig) {
-		this(new MutableJedisClientConfiguration());
-
-		Assert.notNull(poolConfig, "JedisPoolConfig must not be null");
-
-		getMutableConfiguration().setPoolConfig(poolConfig);
-	}
-
-	/**
 	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
 	 * {@link RedisStandaloneConfiguration}.
 	 *
@@ -199,21 +184,6 @@ public class JedisClientConnectionFactory
 
 	/**
 	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
-	 * {@link RedisSentinelConfiguration} and {@link JedisPoolConfig}.
-	 *
-	 * @param sentinelConfiguration must not be {@literal null}.
-	 * @param poolConfig must not be {@literal null}.
-	 */
-	public JedisClientConnectionFactory(RedisSentinelConfiguration sentinelConfiguration, JedisPoolConfig poolConfig) {
-		this(sentinelConfiguration, new MutableJedisClientConfiguration());
-
-		Assert.notNull(poolConfig, "JedisPoolConfig must not be null");
-
-		getMutableConfiguration().setPoolConfig(poolConfig);
-	}
-
-	/**
-	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
 	 * {@link RedisClusterConfiguration}.
 	 *
 	 * @param clusterConfiguration must not be {@literal null}.
@@ -237,21 +207,6 @@ public class JedisClientConnectionFactory
 		Assert.notNull(clusterConfiguration, "RedisClusterConfiguration must not be null");
 
 		this.configuration = clusterConfiguration;
-	}
-
-	/**
-	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
-	 * {@link RedisClusterConfiguration} and {@link JedisPoolConfig}.
-	 *
-	 * @param clusterConfiguration must not be {@literal null}.
-	 * @param poolConfig must not be {@literal null}.
-	 */
-	public JedisClientConnectionFactory(RedisClusterConfiguration clusterConfiguration, JedisPoolConfig poolConfig) {
-		this(clusterConfiguration, new MutableJedisClientConfiguration());
-
-		Assert.notNull(poolConfig, "JedisPoolConfig must not be null");
-
-		getMutableConfiguration().setPoolConfig(poolConfig);
 	}
 
 	/**
@@ -345,36 +300,12 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
-	 * Sets the client name used by this connection factory. Defaults to none which does not set a client name.
-	 *
-	 * @param clientName the client name.
-	 * @deprecated since 3.5, configure the client name using {@link JedisClientConfiguration}.
-	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
-	 */
-	@Deprecated
-	public void setClientName(String clientName) {
-		this.getMutableConfiguration().setClientName(clientName);
-	}
-
-	/**
 	 * Returns whether SSL is enabled.
 	 *
 	 * @return {@literal true} if SSL is enabled.
 	 */
 	public boolean isUseSsl() {
 		return clientConfiguration.isUseSsl();
-	}
-
-	/**
-	 * Sets whether to use SSL.
-	 *
-	 * @param useSsl {@literal true} to use SSL.
-	 * @deprecated since 4.1, configure the SSL usage with {@link JedisClientConfiguration}.
-	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
-	 */
-	@Deprecated
-	public void setUseSsl(boolean useSsl) {
-		getMutableConfiguration().setUseSsl(useSsl);
 	}
 
 	/**
@@ -387,79 +318,12 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
-	 * Sets the timeout.
-	 *
-	 * @param timeout the timeout to set.
-	 * @deprecated since 3.5, configure the timeout using {@link JedisClientConfiguration}.
-	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
-	 */
-	@Deprecated
-	public void setTimeout(int timeout) {
-
-		getMutableConfiguration().setReadTimeout(Duration.ofMillis(timeout));
-		getMutableConfiguration().setConnectTimeout(Duration.ofMillis(timeout));
-	}
-
-	/**
-	 * Sets the database index.
-	 *
-	 * @param index the database index to set.
-	 * @deprecated since 4.1, configure the database index using {@link RedisStandaloneConfiguration} or
-	 * {@link RedisSentinelConfiguration}.
-	 * @throws IllegalStateException if the configuration is immutable.
-	 */
-	@Deprecated
-	public void setDatabase(int index) {
-
-		Assert.isTrue(index >= 0, "invalid DB index (a positive index required)");
-
-		if (RedisConfiguration.isDatabaseIndexAware(configuration)) {
-			((RedisConfiguration.WithDatabaseIndex) configuration).setDatabase(index);
-		} else {
-			standaloneConfig.setDatabase(index);
-		}
-	}
-
-	/**
 	 * Returns whether connection pooling is enabled.
 	 *
 	 * @return {@literal true} if connection pooling is enabled.
 	 */
 	public boolean getUsePool() {
 		return clientConfiguration.isUsePooling();
-	}
-
-	/**
-	 * Returns the pool configuration.
-	 *
-	 * @return the pool configuration or {@literal null} if not configured.
-	 */
-	public <T> @Nullable GenericObjectPoolConfig<T> getPoolConfig() {
-		return (GenericObjectPoolConfig<T>) clientConfiguration.getPoolConfig().orElse(null);
-	}
-
-	/**
-	 * Sets the pool configuration.
-	 *
-	 * @param poolConfig the pool configuration to set.
-	 * @deprecated since 4.1, configure {@link JedisPoolConfig} using {@link JedisClientConfiguration}.
-	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
-	 */
-	@Deprecated
-	public void setPoolConfig(JedisPoolConfig poolConfig) {
-		getMutableConfiguration().setPoolConfig(poolConfig);
-	}
-
-	/**
-	 * Sets whether to use connection pooling.
-	 *
-	 * @param usePool {@literal true} to use connection pooling.
-	 * @deprecated since 4.1, configure pooling usage with {@link JedisClientConfiguration}.
-	 * @throws IllegalStateException if {@link JedisClientConfiguration} is immutable.
-	 */
-	@Deprecated
-	public void setUsePool(boolean usePool) {
-		getMutableConfiguration().setUsePooling(usePool);
 	}
 
 	/**
@@ -660,7 +524,7 @@ public class JedisClientConnectionFactory
 		JedisClientConfig sentinelConfig = createSentinelClientConfig(config);
 
 		return RedisSentinelClient.builder()
-				.masterName(config.getMaster().getName())
+				.masterName(config.getMaster() != null ? config.getMaster().getName() : null)
 				.sentinels(convertToJedisSentinelSet(config.getSentinels()))
 				.clientConfig(this.clientConfig)
 				.sentinelClientConfig(sentinelConfig)

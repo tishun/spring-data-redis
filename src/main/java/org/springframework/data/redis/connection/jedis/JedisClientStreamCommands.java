@@ -57,7 +57,6 @@ import static org.springframework.data.redis.connection.jedis.StreamConverters.m
 import static org.springframework.data.redis.connection.jedis.StreamConverters.toPendingMessages;
 import static org.springframework.data.redis.connection.jedis.StreamConverters.toPendingMessagesSummary;
 import static org.springframework.data.redis.connection.jedis.StreamConverters.toStreamEntryDeletionResults;
-import static org.springframework.data.redis.connection.jedis.StreamConverters.toStreamOffsets;
 import static org.springframework.data.redis.connection.jedis.StreamConverters.toXPendingParams;
 import static org.springframework.data.redis.connection.jedis.StreamConverters.toXReadParams;
 import static org.springframework.data.redis.connection.stream.StreamInfo.XInfoGroups.fromList;

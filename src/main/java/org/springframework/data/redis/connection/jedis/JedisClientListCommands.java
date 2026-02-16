@@ -15,7 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.args.ListDirection;
 import redis.clients.jedis.params.LPosParams;
 
 import java.util.Collections;

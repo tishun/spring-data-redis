@@ -75,7 +75,7 @@ class JedisClientConnectionFactoryIntegrationTests {
 		factory.start();
 
 		try (RedisConnection connection = factory.getConnection()) {
-			assertThat(connection.getClientName()).isEqualTo("jedis-client-test");
+			assertThat(connection.serverCommands().getClientName()).isEqualTo("jedis-client-test");
 		}
 	}
 
@@ -147,9 +147,7 @@ class JedisClientConnectionFactoryIntegrationTests {
 
 		ConnectionVerifier.create(new JedisClientConnectionFactory(standaloneConfiguration,
 				JedisClientConfiguration.defaultConfiguration())) //
-				.execute(connection -> {
-					assertThat(connection.ping()).isEqualTo("PONG");
-				}) //
+				.execute(connection -> assertThat(connection.ping()).isEqualTo("PONG"))
 				.verifyAndClose();
 	}
 

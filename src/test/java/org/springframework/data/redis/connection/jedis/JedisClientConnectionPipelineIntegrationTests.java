@@ -18,7 +18,6 @@ package org.springframework.data.redis.connection.jedis;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -99,17 +98,15 @@ public class JedisClientConnectionPipelineIntegrationTests extends AbstractConne
 	@Override
 	@Test
 	public void testExecWithoutMulti() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
-			connection.exec();
-		}).withMessage("No ongoing transaction; Did you forget to call multi");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
+				.isThrownBy(connection::exec).withMessage("No ongoing transaction; Did you forget to call multi");
 	}
 
 	@Override
 	@Test
 	public void testErrorInTx() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
-			connection.multi();
-		}).withMessage("Cannot use Transaction while a pipeline is open");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
+				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
 	}
 }
 

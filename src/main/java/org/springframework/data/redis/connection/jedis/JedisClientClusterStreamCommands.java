@@ -340,7 +340,7 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 
 		try {
 
-			List<?> xread = connection.getClusterClient().xread(xReadParams, toStreamOffsets(streams));
+			List<?> xread = connection.getClusterClient().xreadBinary(xReadParams, toStreamOffsetsMap(streams));
 
 			if (xread == null) {
 				return Collections.emptyList();
@@ -364,8 +364,8 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 
 		try {
 
-			List<?> xread = connection.getClusterClient().xreadGroup(JedisConverters.toBytes(consumer.getGroup()),
-					JedisConverters.toBytes(consumer.getName()), xReadParams, toStreamOffsets(streams));
+			List<?> xread = connection.getClusterClient().xreadGroupBinary(JedisConverters.toBytes(consumer.getGroup()),
+					JedisConverters.toBytes(consumer.getName()), xReadParams, toStreamOffsetsMap(streams));
 
 			if (xread == null) {
 				return Collections.emptyList();
