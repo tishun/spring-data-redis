@@ -15,16 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.BuilderFactory;
-import redis.clients.jedis.params.XAddParams;
-import redis.clients.jedis.params.XClaimParams;
-import redis.clients.jedis.params.XPendingParams;
-import redis.clients.jedis.params.XReadGroupParams;
-import redis.clients.jedis.params.XReadParams;
-import redis.clients.jedis.params.XTrimParams;
-import redis.clients.jedis.resps.StreamConsumerInfo;
-import redis.clients.jedis.resps.StreamGroupInfo;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,7 +22,6 @@ import java.util.List;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullUnmarked;
-
 import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.Limit;
 import org.springframework.data.redis.connection.RedisStreamCommands;
@@ -47,6 +36,16 @@ import org.springframework.data.redis.connection.stream.StreamInfo;
 import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.connection.stream.StreamReadOptions;
 import org.springframework.util.Assert;
+
+import redis.clients.jedis.BuilderFactory;
+import redis.clients.jedis.params.XAddParams;
+import redis.clients.jedis.params.XClaimParams;
+import redis.clients.jedis.params.XPendingParams;
+import redis.clients.jedis.params.XReadGroupParams;
+import redis.clients.jedis.params.XReadParams;
+import redis.clients.jedis.params.XTrimParams;
+import redis.clients.jedis.resps.StreamConsumerInfo;
+import redis.clients.jedis.resps.StreamGroupInfo;
 
 import static org.springframework.data.redis.connection.jedis.JedisConverters.*;
 import static org.springframework.data.redis.connection.jedis.StreamConverters.*;

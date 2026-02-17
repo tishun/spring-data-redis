@@ -15,13 +15,12 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.GeoResults;
@@ -38,7 +37,7 @@ import org.springframework.data.redis.domain.geo.GeoShape;
 import org.springframework.data.redis.test.condition.EnabledOnRedisClusterAvailable;
 import org.springframework.data.redis.test.extension.JedisExtension;
 
-import java.util.List;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for {@link JedisClientGeoCommands} in cluster mode. Tests all methods in direct and pipelined modes

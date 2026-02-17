@@ -15,9 +15,18 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
+import java.time.Duration;
+import java.util.*;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
+import org.springframework.beans.PropertyAccessor;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.redis.ExceptionTranslationStrategy;
 import org.springframework.data.redis.FallbackExceptionTranslationStrategy;
@@ -27,23 +36,14 @@ import org.springframework.data.redis.connection.ClusterCommandExecutor.ClusterC
 import org.springframework.data.redis.connection.ClusterCommandExecutor.MultiKeyClusterCommandCallback;
 import org.springframework.data.redis.connection.ClusterCommandExecutor.NodeResult;
 import org.springframework.data.redis.connection.RedisClusterNode.SlotRange;
-import redis.clients.jedis.*;
-import redis.clients.jedis.providers.ClusterConnectionProvider;
-
-import java.time.Duration;
-import java.util.*;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
-import org.jspecify.annotations.NullUnmarked;
-import org.jspecify.annotations.NullMarked;
-import org.springframework.beans.PropertyAccessor;
-import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.util.DirectFieldAccessFallbackBeanWrapper;
 import org.springframework.util.Assert;
+
+import redis.clients.jedis.*;
+import redis.clients.jedis.providers.ClusterConnectionProvider;
 
 /**
  * {@link RedisClusterConnection} implementation using Jedis 7.2+ {@link RedisClusterClient} API.

@@ -15,15 +15,14 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
-
 import java.time.Duration;
+import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.data.redis.SettingsUtils;
 import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -31,9 +30,7 @@ import org.springframework.data.redis.connection.ValueEncoding;
 import org.springframework.data.redis.test.condition.EnabledOnRedisAvailable;
 import org.springframework.data.redis.test.extension.JedisExtension;
 
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for {@link JedisClientKeyCommands}. Tests all methods in direct, transaction, and pipelined modes.

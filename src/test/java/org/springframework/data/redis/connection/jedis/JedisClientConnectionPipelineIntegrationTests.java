@@ -15,8 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +24,8 @@ import org.springframework.data.redis.connection.RedisPipelineException;
 import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for {@link JedisClientConnection} pipeline functionality.

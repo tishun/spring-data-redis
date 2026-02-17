@@ -15,13 +15,13 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.data.redis.SettingsUtils;
 import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
@@ -31,9 +31,7 @@ import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.data.redis.test.condition.EnabledOnRedisClusterAvailable;
 import org.springframework.data.redis.test.extension.JedisExtension;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for {@link JedisClientStringCommands} in cluster mode. Tests all methods in direct and pipelined

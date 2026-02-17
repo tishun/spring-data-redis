@@ -15,13 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.Protocol;
-import redis.clients.jedis.params.ScanParams;
-import redis.clients.jedis.params.ZParams;
-import redis.clients.jedis.params.ZRangeParams;
-import redis.clients.jedis.resps.ScanResult;
-import redis.clients.jedis.util.KeyValue;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -47,6 +40,13 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.util.ByteUtils;
 import org.springframework.lang.Contract;
 import org.springframework.util.Assert;
+
+import redis.clients.jedis.Protocol;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.params.ZParams;
+import redis.clients.jedis.params.ZRangeParams;
+import redis.clients.jedis.resps.ScanResult;
+import redis.clients.jedis.util.KeyValue;
 
 /**
  * Cluster {@link RedisZSetCommands} implementation for Jedis.

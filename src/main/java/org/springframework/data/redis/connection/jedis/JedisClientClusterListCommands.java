@@ -15,9 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.args.ListDirection;
-import redis.clients.jedis.params.LPosParams;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +28,9 @@ import org.springframework.data.redis.connection.RedisListCommands;
 import org.springframework.data.redis.connection.jedis.JedisClusterConnection.JedisMultiKeyClusterCommandCallback;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+
+import redis.clients.jedis.args.ListDirection;
+import redis.clients.jedis.params.LPosParams;
 
 /**
  * @author Tihomir Mateev

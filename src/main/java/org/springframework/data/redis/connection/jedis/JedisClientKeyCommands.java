@@ -15,13 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.PipeliningBase;
-import redis.clients.jedis.UnifiedJedis;
-import redis.clients.jedis.args.ExpiryOption;
-import redis.clients.jedis.params.ScanParams;
-import redis.clients.jedis.params.SortingParams;
-import redis.clients.jedis.resps.ScanResult;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -47,6 +40,13 @@ import org.springframework.data.redis.core.ScanIteration;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
+
+import redis.clients.jedis.PipeliningBase;
+import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.args.ExpiryOption;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.params.SortingParams;
+import redis.clients.jedis.resps.ScanResult;
 
 import static org.springframework.data.redis.connection.convert.Converters.*;
 import static org.springframework.data.redis.connection.convert.Converters.millisecondsToTimeUnit;

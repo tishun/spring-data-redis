@@ -15,10 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.UnifiedJedis;
-import redis.clients.jedis.args.SaveMode;
-import redis.clients.jedis.params.MigrateParams;
-
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -31,19 +27,23 @@ import org.springframework.data.redis.connection.RedisServerCommands;
 import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
 
+import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.args.SaveMode;
+import redis.clients.jedis.params.MigrateParams;
+
 import static org.springframework.data.redis.connection.convert.Converters.toProperties;
 import static org.springframework.data.redis.connection.jedis.JedisConverters.*;
 import static org.springframework.data.redis.connection.jedis.JedisConverters.toBytes;
 import static org.springframework.data.redis.connection.jedis.JedisConverters.toTime;
 import static redis.clients.jedis.Protocol.Command.*;
-import static redis.clients.jedis.Protocol.Keyword.RESETSTAT;
-import static redis.clients.jedis.Protocol.Keyword.REWRITE;
-import static redis.clients.jedis.Protocol.Keyword.KILL;
-import static redis.clients.jedis.Protocol.Keyword.SETNAME;
 import static redis.clients.jedis.Protocol.Keyword.GETNAME;
+import static redis.clients.jedis.Protocol.Keyword.KILL;
 import static redis.clients.jedis.Protocol.Keyword.LIST;
 import static redis.clients.jedis.Protocol.Keyword.NO;
 import static redis.clients.jedis.Protocol.Keyword.ONE;
+import static redis.clients.jedis.Protocol.Keyword.RESETSTAT;
+import static redis.clients.jedis.Protocol.Keyword.REWRITE;
+import static redis.clients.jedis.Protocol.Keyword.SETNAME;
 
 /**
  * Implementation of {@link RedisServerCommands} for {@link JedisClientConnection}.

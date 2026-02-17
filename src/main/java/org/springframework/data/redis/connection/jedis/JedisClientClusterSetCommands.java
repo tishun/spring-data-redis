@@ -15,10 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.params.ScanParams;
-import redis.clients.jedis.resps.ScanResult;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,6 +34,10 @@ import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.util.ByteUtils;
 import org.springframework.data.redis.util.KeyUtils;
 import org.springframework.util.Assert;
+
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
 /**
  * @author Tihomir Mateev

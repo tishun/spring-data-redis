@@ -15,9 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import org.springframework.data.redis.connection.*;
-import redis.clients.jedis.*;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -35,12 +32,15 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.data.redis.ExceptionTranslationStrategy;
 import org.springframework.data.redis.PassThroughExceptionTranslationStrategy;
+import org.springframework.data.redis.connection.*;
 import org.springframework.data.redis.connection.RedisConfiguration.SentinelConfiguration;
 import org.springframework.data.redis.util.RedisClientLibraryInfo;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
+
+import redis.clients.jedis.*;
 
 import static org.springframework.data.redis.connection.jedis.JedisConnectionFactory.MutableJedisClientConfiguration;
 

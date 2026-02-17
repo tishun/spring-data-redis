@@ -15,15 +15,13 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.springframework.data.redis.connection.ClusterTestVariables.*;
+import java.util.Collections;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
@@ -35,7 +33,8 @@ import org.springframework.data.redis.test.extension.JedisExtension;
 
 import redis.clients.jedis.RedisClusterClient;
 
-import java.util.Collections;
+import static org.assertj.core.api.Assertions.*;
+import static org.springframework.data.redis.connection.ClusterTestVariables.*;
 
 /**
  * Integration tests for {@link JedisClientClusterConnection}.

@@ -15,8 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.Jedis;
-
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +33,8 @@ import org.springframework.data.redis.connection.jedis.JedisClusterConnection.Je
 import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+
+import redis.clients.jedis.Jedis;
 
 /**
  * @author Tihomir Mateev

@@ -15,32 +15,32 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import org.jspecify.annotations.NullUnmarked;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.redis.connection.*;
-import org.springframework.data.redis.connection.convert.TransactionResultConverter;
-import redis.clients.jedis.*;
-import redis.clients.jedis.commands.ProtocolCommand;
-import redis.clients.jedis.Protocol;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.redis.ExceptionTranslationStrategy;
 import org.springframework.data.redis.FallbackExceptionTranslationStrategy;
 import org.springframework.data.redis.RedisSystemException;
+import org.springframework.data.redis.connection.*;
+import org.springframework.data.redis.connection.convert.TransactionResultConverter;
 import org.springframework.data.redis.connection.jedis.JedisResult.JedisResultBuilder;
 import org.springframework.data.redis.connection.jedis.JedisResult.JedisStatusResult;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import redis.clients.jedis.*;
+import redis.clients.jedis.Protocol;
+import redis.clients.jedis.commands.ProtocolCommand;
 
 /**
  * {@code RedisConnection} implementation on top of <a href="https://github.com/redis/jedis">Jedis</a> 7.2+ library

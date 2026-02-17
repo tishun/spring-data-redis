@@ -15,8 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.params.LPosParams;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -25,6 +23,8 @@ import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.redis.connection.RedisListCommands;
 import org.springframework.util.Assert;
+
+import redis.clients.jedis.params.LPosParams;
 
 import static org.springframework.data.redis.connection.jedis.JedisConverters.toListPosition;
 import static redis.clients.jedis.args.ListDirection.valueOf;

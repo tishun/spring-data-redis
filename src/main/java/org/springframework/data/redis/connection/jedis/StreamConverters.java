@@ -15,19 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.BuilderFactory;
-import redis.clients.jedis.StreamEntryID;
-import redis.clients.jedis.args.StreamDeletionPolicy;
-import redis.clients.jedis.params.XAddParams;
-import redis.clients.jedis.params.XClaimParams;
-import redis.clients.jedis.params.XPendingParams;
-import redis.clients.jedis.params.XReadGroupParams;
-import redis.clients.jedis.params.XReadParams;
-import redis.clients.jedis.params.XTrimParams;
-import redis.clients.jedis.resps.StreamEntry;
-import redis.clients.jedis.resps.StreamPendingEntry;
-import redis.clients.jedis.util.KeyValue;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.RedisStreamCommands;
@@ -50,6 +38,19 @@ import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.connection.stream.StreamReadOptions;
 import org.springframework.data.redis.connection.stream.StreamRecords;
+
+import redis.clients.jedis.BuilderFactory;
+import redis.clients.jedis.StreamEntryID;
+import redis.clients.jedis.args.StreamDeletionPolicy;
+import redis.clients.jedis.params.XAddParams;
+import redis.clients.jedis.params.XClaimParams;
+import redis.clients.jedis.params.XPendingParams;
+import redis.clients.jedis.params.XReadGroupParams;
+import redis.clients.jedis.params.XReadParams;
+import redis.clients.jedis.params.XTrimParams;
+import redis.clients.jedis.resps.StreamEntry;
+import redis.clients.jedis.resps.StreamPendingEntry;
+import redis.clients.jedis.util.KeyValue;
 
 /**
  * Converters for Redis Stream-specific types.

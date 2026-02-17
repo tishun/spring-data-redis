@@ -15,9 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.params.BitPosParams;
-import redis.clients.jedis.params.SetParams;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +28,9 @@ import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.connection.convert.Converters;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.util.Assert;
+
+import redis.clients.jedis.params.BitPosParams;
+import redis.clients.jedis.params.SetParams;
 
 import static org.springframework.data.redis.connection.jedis.JedisConverters.toBitOp;
 import static org.springframework.data.redis.connection.jedis.JedisConverters.toBitfieldCommandArguments;

@@ -15,8 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.Jedis;
-
 import java.util.List;
 
 import org.jspecify.annotations.NonNull;
@@ -26,6 +24,8 @@ import org.springframework.data.redis.connection.ClusterCommandExecutor;
 import org.springframework.data.redis.connection.RedisScriptingCommands;
 import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.util.Assert;
+
+import redis.clients.jedis.Jedis;
 
 /**
  * @author Tihomir Mateev

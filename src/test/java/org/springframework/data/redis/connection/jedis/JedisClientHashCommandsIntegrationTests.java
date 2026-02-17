@@ -15,25 +15,24 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.data.redis.SettingsUtils;
+import org.springframework.data.redis.connection.ExpirationOptions;
+import org.springframework.data.redis.connection.RedisHashCommands;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.data.redis.test.condition.EnabledOnRedisAvailable;
 import org.springframework.data.redis.test.extension.JedisExtension;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import org.springframework.data.redis.connection.ExpirationOptions;
-import org.springframework.data.redis.connection.RedisHashCommands;
-import org.springframework.data.redis.core.types.Expiration;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for {@link JedisClientHashCommands}. Tests all methods in direct, transaction, and pipelined modes.

@@ -15,13 +15,15 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.springframework.data.domain.Range;
 import org.springframework.data.redis.SettingsUtils;
 import org.springframework.data.redis.connection.Limit;
@@ -37,10 +39,7 @@ import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.test.condition.EnabledOnRedisAvailable;
 import org.springframework.data.redis.test.extension.JedisExtension;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for {@link JedisClientStreamCommands}. Tests all methods in direct, transaction, and pipelined

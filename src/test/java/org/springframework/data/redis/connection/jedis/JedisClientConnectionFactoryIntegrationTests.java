@@ -15,9 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +27,9 @@ import org.springframework.data.redis.core.types.RedisClientInfo;
 import org.springframework.data.redis.test.condition.EnabledOnRedisClusterAvailable;
 import org.springframework.data.redis.util.ConnectionVerifier;
 import org.springframework.data.redis.util.RedisClientLibraryInfo;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Integration tests for {@link JedisClientConnectionFactory}.

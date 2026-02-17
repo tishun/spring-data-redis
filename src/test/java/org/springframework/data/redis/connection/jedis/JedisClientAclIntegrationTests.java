@@ -15,16 +15,15 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
-
 import org.junit.jupiter.api.Test;
-
 import org.springframework.data.redis.SettingsUtils;
 import org.springframework.data.redis.connection.RedisConnectionCommands;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.test.condition.EnabledOnRedisAvailable;
 import org.springframework.data.redis.test.condition.EnabledOnRedisVersion;
 import org.springframework.data.redis.util.ConnectionVerifier;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Integration tests for Redis 6+ ACL authentication using {@link JedisClientConnectionFactory}.

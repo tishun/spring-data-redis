@@ -15,11 +15,12 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
-
 import org.junit.jupiter.api.Test;
+
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.commands.ProtocolCommand;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Unit tests for {@link JedisClientUtils}.

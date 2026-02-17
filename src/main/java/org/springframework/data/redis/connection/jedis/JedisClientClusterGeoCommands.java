@@ -15,11 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import redis.clients.jedis.GeoCoordinate;
-import redis.clients.jedis.args.GeoUnit;
-import redis.clients.jedis.params.GeoRadiusParam;
-import redis.clients.jedis.params.GeoSearchParam;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +31,11 @@ import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.domain.geo.GeoReference;
 import org.springframework.data.redis.domain.geo.GeoShape;
 import org.springframework.util.Assert;
+
+import redis.clients.jedis.GeoCoordinate;
+import redis.clients.jedis.args.GeoUnit;
+import redis.clients.jedis.params.GeoRadiusParam;
+import redis.clients.jedis.params.GeoSearchParam;
 
 /**
  * @author Tihomir Mateev
