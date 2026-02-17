@@ -4,8 +4,21 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
 
 
+	<!-- Builder chain: builder() -> clientName("jedis-client-test") -> build() -->
+	<bean id="jedisClientConfigBuilder"
+		class="org.springframework.data.redis.connection.jedis.JedisClientConfiguration"
+		factory-method="builder" />
+
+	<bean id="jedisClientConfigBuilderWithName"
+		factory-bean="jedisClientConfigBuilder" factory-method="clientName">
+		<constructor-arg value="jedis-client-test" />
+	</bean>
+
+	<bean id="jedisClientConfig"
+		factory-bean="jedisClientConfigBuilderWithName" factory-method="build" />
+
 	<bean id="jedisClientConnectionFactory"
-		class="org.springframework.data.redis.connection.jedis.JedisClientConnectionFactory" p:timeout="60000">
+		class="org.springframework.data.redis.connection.jedis.JedisClientConnectionFactory">
 		<constructor-arg>
 			<bean class="org.springframework.data.redis.connection.RedisStandaloneConfiguration">
 				<property name="hostName">
@@ -18,7 +31,7 @@
 				</property>
 			</bean>
 		</constructor-arg>
-		<property name="clientName" value="jedis-client-test" />
+		<constructor-arg ref="jedisClientConfig" />
 	</bean>
 
 </beans>

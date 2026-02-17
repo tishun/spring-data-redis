@@ -371,7 +371,7 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 				return Collections.emptyList();
 			}
 
-			return StreamConverters.convertToByteRecords(xread);
+			return StreamConverters.convertClusterToByteRecords(xread);
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}

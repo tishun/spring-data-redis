@@ -26,6 +26,7 @@ import redis.clients.jedis.params.XReadParams;
 import redis.clients.jedis.params.XTrimParams;
 import redis.clients.jedis.resps.StreamEntry;
 import redis.clients.jedis.resps.StreamPendingEntry;
+import redis.clients.jedis.util.KeyValue;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -130,27 +131,57 @@ class StreamConverters {
 	static Map<byte[], StreamEntryID> toStreamOffsetsMap(StreamOffset<byte[]>[] streams) {
 		return Arrays.stream(streams)
 				.collect(Collectors.toMap(StreamOffset::getKey,
-						v -> new StreamEntryID(v.getOffset().getOffset())));
+						v -> toStreamEntryID(v.getOffset().getOffset())));
+	}
+
+	/**
+	 * Convert offset string to StreamEntryID, handling special markers.
+	 */
+	private static StreamEntryID toStreamEntryID(String offset) {
+		return switch (offset) {
+			case ">" -> StreamEntryID.XREADGROUP_UNDELIVERED_ENTRY;
+			case "$" -> StreamEntryID.XGROUP_LAST_ENTRY;
+			case "*" -> StreamEntryID.NEW_ENTRY;
+			case "-" -> StreamEntryID.MINIMUM_ID;
+			case "+" -> StreamEntryID.MAXIMUM_ID;
+			default -> {
+				// StreamEntryID constructor expects "timestamp-sequence" format
+				// If offset doesn't contain '-', append "-0" to make it valid
+				if (!offset.contains("-")) {
+					yield new StreamEntryID(offset + "-0");
+				}
+				yield new StreamEntryID(offset);
+			}
+		};
 	}
 
 	static List<ByteRecord> convertToByteRecord(byte[] key, Object source) {
 
-		List<List<Object>> objectList = (List<List<Object>>) source;
+		List<?> objectList = (List<?>) source;
 		List<ByteRecord> result = new ArrayList<>(objectList.size() / 2);
 
 		if (objectList.isEmpty()) {
 			return result;
 		}
 
-		for (List<Object> res : objectList) {
+		// Check if first element is StreamEntryBinary (Jedis 5.1.3+) or List<Object> (older versions)
+		Object firstElement = objectList.get(0);
+		if (firstElement != null && firstElement.getClass().getName().contains("StreamEntryBinary")) {
+			// Jedis 5.1.3+ returns List<StreamEntryBinary>
+			return convertStreamEntryBinaryList(key, objectList);
+		}
+
+		// Older Jedis versions return List<List<Object>>
+		for (Object res : objectList) {
 
 			if (res == null) {
 				result.add(null);
 				continue;
 			}
 
-			String entryIdString = JedisConverters.toString((byte[]) res.get(0));
-			List<byte[]> hash = (List<byte[]>) res.get(1);
+			List<Object> entry = (List<Object>) res;
+			String entryIdString = JedisConverters.toString((byte[]) entry.get(0));
+			List<byte[]> hash = (List<byte[]>) entry.get(1);
 
 			Iterator<byte[]> hashIterator = hash.iterator();
 			Map<byte[], byte[]> fields = new HashMap<>(hash.size() / 2);
@@ -163,13 +194,85 @@ class StreamConverters {
 		return result;
 	}
 
+	/**
+	 * Convert List of StreamEntryBinary objects to ByteRecords.
+	 * Uses reflection to access StreamEntryBinary fields since it's not a public API class.
+	 */
+	private static List<ByteRecord> convertStreamEntryBinaryList(byte[] key, List<?> entries) {
+		List<ByteRecord> result = new ArrayList<>(entries.size());
+		try {
+			for (Object entryObj : entries) {
+				if (entryObj == null) {
+					result.add(null);
+					continue;
+				}
+				// Use reflection to access StreamEntryBinary fields
+				java.lang.reflect.Method getID = entryObj.getClass().getMethod("getID");
+				java.lang.reflect.Method getFields = entryObj.getClass().getMethod("getFields");
+				Object id = getID.invoke(entryObj);
+				Map<byte[], byte[]> fields = (Map<byte[], byte[]>) getFields.invoke(entryObj);
+				result.add(StreamRecords.newRecord()
+						.in(key)
+						.withId(id.toString())
+						.ofBytes(fields));
+			}
+		} catch (Exception e) {
+			throw new IllegalStateException("Failed to convert StreamEntryBinary to ByteRecord", e);
+		}
+		return result;
+	}
+
 	static List<ByteRecord> convertToByteRecords(List<?> sources) {
 
 		List<ByteRecord> result = new ArrayList<>(sources.size() / 2);
 
 		for (Object source : sources) {
-			List<Object> stream = (List<Object>) source;
-			result.addAll(convertToByteRecord((byte[]) stream.get(0), stream.get(1)));
+			// Jedis 5.1.3+ returns KeyValue objects instead of List<Object>
+			if (source instanceof KeyValue) {
+				KeyValue<byte[], ?> keyValue = (KeyValue<byte[], ?>) source;
+				result.addAll(convertToByteRecord(keyValue.getKey(), keyValue.getValue()));
+			} else {
+				// Fallback for older Jedis versions
+				List<Object> stream = (List<Object>) source;
+				result.addAll(convertToByteRecord((byte[]) stream.get(0), stream.get(1)));
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Convert cluster xreadGroupBinary result (List of KeyValue) to ByteRecords.
+	 * Cluster API returns List&lt;KeyValue&lt;byte[], List&lt;?&gt;&gt;&gt; where the list contains StreamEntryBinary objects.
+	 * StreamEntryBinary is a Jedis internal class with getID() and getFields() methods.
+	 */
+	static List<ByteRecord> convertClusterToByteRecords(List<?> sources) {
+
+		List<ByteRecord> result = new ArrayList<>();
+
+		for (Object source : sources) {
+			KeyValue<byte[], ?> keyValue = (KeyValue<byte[], ?>) source;
+			byte[] streamKey = keyValue.getKey();
+			List<?> entries = (List<?>) keyValue.getValue();
+
+			for (Object entryObj : entries) {
+				// Use reflection to access StreamEntryBinary fields since it's not a public API
+				try {
+					// StreamEntryBinary has getID() -> StreamEntryID and getFields() -> Map<byte[], byte[]>
+					java.lang.reflect.Method getID = entryObj.getClass().getMethod("getID");
+					java.lang.reflect.Method getFields = entryObj.getClass().getMethod("getFields");
+
+					Object id = getID.invoke(entryObj);
+					Map<byte[], byte[]> fields = (Map<byte[], byte[]>) getFields.invoke(entryObj);
+
+					result.add(StreamRecords.newRecord()
+							.in(streamKey)
+							.withId(id.toString())
+							.ofBytes(fields));
+				} catch (Exception e) {
+					throw new IllegalStateException("Failed to convert cluster stream entry", e);
+				}
+			}
 		}
 
 		return result;

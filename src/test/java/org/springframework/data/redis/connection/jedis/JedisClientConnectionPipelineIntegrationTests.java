@@ -108,5 +108,40 @@ public class JedisClientConnectionPipelineIntegrationTests extends AbstractConne
 		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
 				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
 	}
+
+	@Override
+	@Test
+	public void testMultiExec() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
+				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+	}
+
+	@Override
+	@Test
+	public void testMultiAlreadyInTx() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
+				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+	}
+
+	@Override
+	@Test
+	public void testMultiDiscard() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
+				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+	}
+
+	@Override
+	@Test
+	public void testWatch() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
+				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+	}
+
+	@Override
+	@Test
+	public void testUnwatch() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
+				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+	}
 }
 

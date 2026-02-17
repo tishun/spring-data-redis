@@ -17,9 +17,13 @@ package org.springframework.data.redis.connection.jedis;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.data.redis.connection.AbstractConnectionIntegrationTests;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -89,7 +93,29 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 
 	@Test
 	void shouldGetClientName() {
+		// Reset client name first in case another test changed it
+		connection.setClientName("jedis-client-test".getBytes());
 		assertThat(connection.getClientName()).isEqualTo("jedis-client-test");
+	}
+
+	@Override
+	@Test
+	public void testMove() {
+		// Ensure we're on database 0
+		connection.select(0);
+		connection.set("foo", "bar");
+		assertThat(connection.move("foo", 1)).isTrue();
+
+		connection.select(1);
+		try {
+			assertThat(connection.get("foo")).isEqualTo("bar");
+		} finally {
+			if (connection.exists("foo")) {
+				connection.del("foo");
+			}
+			// Reset to database 0
+			connection.select(0);
+		}
 	}
 
 	@Test
@@ -150,10 +176,92 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 		connection.sAdd("set", "member1");
 		connection.sAdd("set", "member2");
 		connection.sAdd("set", "member3");
-		
+
 		assertThat(connection.sCard("set")).isEqualTo(3L);
 		assertThat(connection.sIsMember("set", "member1")).isTrue();
 		assertThat(connection.sIsMember("set", "member4")).isFalse();
+	}
+
+	// Jedis throws InvalidDataAccessApiUsageException for script errors, not RedisSystemException
+	@Override
+	@Test
+	public void testEvalShaArrayError() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			connection.evalSha("notasha", ReturnType.MULTI, 1, "key1", "arg1");
+			getResults();
+		});
+	}
+
+	@Override
+	@Test
+	public void testEvalShaNotFound() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			connection.evalSha("somefakesha", ReturnType.VALUE, 2, "key1", "key2");
+			getResults();
+		});
+	}
+
+	@Override
+	@Test
+	public void testEvalReturnSingleError() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			connection.eval("return redis.call('expire','foo')", ReturnType.BOOLEAN, 0);
+			getResults();
+		});
+	}
+
+	@Override
+	@Test
+	public void testEvalArrayScriptError() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			// Syntax error
+			connection.eval("return {1,2", ReturnType.MULTI, 1, "foo", "bar");
+			getResults();
+		});
+	}
+
+	@Override
+	@Test
+	public void testExecWithoutMulti() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			connection.exec();
+		});
+	}
+
+	@Override
+	@Test
+	public void testErrorInTx() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			connection.multi();
+			connection.set("foo", "bar");
+			// Try to do a list op on a value
+			connection.lPop("foo");
+			connection.exec();
+			getResults();
+		});
+	}
+
+	@Override
+	@Test
+	public void testRestoreBadData() {
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			// Use something other than dump-specific serialization
+			connection.restore("testing".getBytes(), 0, "foo".getBytes());
+			getResults();
+		});
+	}
+
+	@Override
+	@Test
+	public void testRestoreExistingKey() {
+		actual.add(connection.set("testing", "12"));
+		actual.add(connection.dump("testing".getBytes()));
+		List<Object> results = getResults();
+		initConnection();
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			connection.restore("testing".getBytes(), 0, (byte[]) results.get(1));
+			getResults();
+		});
 	}
 }
 
