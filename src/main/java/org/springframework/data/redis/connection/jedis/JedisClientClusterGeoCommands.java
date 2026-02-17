@@ -157,7 +157,8 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 		Assert.noNullElements(members, "Members must not contain null");
 
 		try {
-			return JedisConverters.geoCoordinateToPointConverter().convert(connection.getClusterClient().geopos(key, members));
+			return JedisConverters.geoCoordinateToPointConverter()
+					.convert(connection.getClusterClient().geopos(key, members));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -180,7 +181,7 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 
 	@Override
 	public GeoResults<@NonNull GeoLocation<byte[]>> geoRadius(byte @NonNull [] key, @NonNull Circle within,
-                                                              @NonNull GeoRadiusCommandArgs args) {
+			@NonNull GeoRadiusCommandArgs args) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(within, "Within must not be null");
@@ -200,7 +201,7 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 
 	@Override
 	public GeoResults<@NonNull GeoLocation<byte[]>> geoRadiusByMember(byte @NonNull [] key, byte @NonNull [] member,
-                                                                      @NonNull Distance radius) {
+			@NonNull Distance radius) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(member, "Member must not be null");
@@ -217,7 +218,7 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 
 	@Override
 	public GeoResults<@NonNull GeoLocation<byte[]>> geoRadiusByMember(byte @NonNull [] key, byte @NonNull [] member,
-                                                                      @NonNull Distance radius, @NonNull GeoRadiusCommandArgs args) {
+			@NonNull Distance radius, @NonNull GeoRadiusCommandArgs args) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(member, "Member must not be null");
@@ -228,8 +229,8 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 		redis.clients.jedis.params.GeoRadiusParam geoRadiusParam = JedisConverters.toGeoRadiusParam(args);
 
 		try {
-			return JedisConverters.geoRadiusResponseToGeoResultsConverter(radius.getMetric())
-					.convert(connection.getClusterClient().georadiusByMember(key, member, radius.getValue(), geoUnit, geoRadiusParam));
+			return JedisConverters.geoRadiusResponseToGeoResultsConverter(radius.getMetric()).convert(
+					connection.getClusterClient().georadiusByMember(key, member, radius.getValue(), geoUnit, geoRadiusParam));
 
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
@@ -242,8 +243,8 @@ class JedisClientClusterGeoCommands implements RedisGeoCommands {
 	}
 
 	@Override
-	public GeoResults<@NonNull GeoLocation<byte[]>> geoSearch(byte @NonNull [] key, @NonNull GeoReference<byte[]> reference,
-                                                              @NonNull GeoShape predicate, @NonNull GeoSearchCommandArgs args) {
+	public GeoResults<@NonNull GeoLocation<byte[]>> geoSearch(byte @NonNull [] key,
+			@NonNull GeoReference<byte[]> reference, @NonNull GeoShape predicate, @NonNull GeoSearchCommandArgs args) {
 
 		Assert.notNull(key, "Key must not be null");
 		GeoSearchParam params = JedisConverters.toGeoSearchParams(reference, predicate, args);

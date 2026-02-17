@@ -44,8 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Integration tests for {@link JedisClientGeoCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientGeoCommands}. Tests all methods in direct, transaction, and pipelined modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -59,8 +58,8 @@ class JedisClientGeoCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -81,8 +80,8 @@ class JedisClientGeoCommandsIntegrationTests {
 	@Test
 	void basicGeoOperationsShouldWork() {
 		// Test geoAdd - add single location
-		Long addResult = connection.geoCommands().geoAdd("cities".getBytes(), 
-				new Point(13.361389, 38.115556), "Palermo".getBytes());
+		Long addResult = connection.geoCommands().geoAdd("cities".getBytes(), new Point(13.361389, 38.115556),
+				"Palermo".getBytes());
 		assertThat(addResult).isEqualTo(1L);
 
 		// Test geoAdd - add multiple locations
@@ -93,22 +92,26 @@ class JedisClientGeoCommandsIntegrationTests {
 		assertThat(addMultiResult).isEqualTo(2L);
 
 		// Test geoPos - get position
-		List<Point> positions = connection.geoCommands().geoPos("cities".getBytes(), "Palermo".getBytes(), "Rome".getBytes());
+		List<Point> positions = connection.geoCommands().geoPos("cities".getBytes(), "Palermo".getBytes(),
+				"Rome".getBytes());
 		assertThat(positions).hasSize(2);
 		assertThat(positions.get(0)).isNotNull();
 
 		// Test geoDist - get distance between two members
-		Distance distance = connection.geoCommands().geoDist("cities".getBytes(), "Palermo".getBytes(), "Catania".getBytes());
+		Distance distance = connection.geoCommands().geoDist("cities".getBytes(), "Palermo".getBytes(),
+				"Catania".getBytes());
 		assertThat(distance).isNotNull();
 		assertThat(distance.getValue()).isGreaterThan(0);
 
 		// Test geoDist with metric
-		Distance distanceKm = connection.geoCommands().geoDist("cities".getBytes(), "Palermo".getBytes(), "Catania".getBytes(), Metrics.KILOMETERS);
+		Distance distanceKm = connection.geoCommands().geoDist("cities".getBytes(), "Palermo".getBytes(),
+				"Catania".getBytes(), Metrics.KILOMETERS);
 		assertThat(distanceKm).isNotNull();
 		assertThat(distanceKm.getValue()).isGreaterThan(0);
 
 		// Test geoHash - get geohash
-		List<String> hashes = connection.geoCommands().geoHash("cities".getBytes(), "Palermo".getBytes(), "Rome".getBytes());
+		List<String> hashes = connection.geoCommands().geoHash("cities".getBytes(), "Palermo".getBytes(),
+				"Rome".getBytes());
 		assertThat(hashes).hasSize(2);
 		assertThat(hashes.get(0)).isNotNull();
 	}
@@ -135,13 +138,13 @@ class JedisClientGeoCommandsIntegrationTests {
 		assertThat(radiusWithArgsResult.getContent()).isNotEmpty();
 
 		// Test geoRadiusByMember - find members within radius of member
-		GeoResults<GeoLocation<byte[]>> radiusByMemberResult = connection.geoCommands().geoRadiusByMember("cities".getBytes(),
-				"Palermo".getBytes(), radius);
+		GeoResults<GeoLocation<byte[]>> radiusByMemberResult = connection.geoCommands()
+				.geoRadiusByMember("cities".getBytes(), "Palermo".getBytes(), radius);
 		assertThat(radiusByMemberResult.getContent()).isNotEmpty();
 
 		// Test geoRadiusByMember with args
-		GeoResults<GeoLocation<byte[]>> radiusByMemberWithArgsResult = connection.geoCommands().geoRadiusByMember("cities".getBytes(),
-				"Palermo".getBytes(), radius, args);
+		GeoResults<GeoLocation<byte[]>> radiusByMemberWithArgsResult = connection.geoCommands()
+				.geoRadiusByMember("cities".getBytes(), "Palermo".getBytes(), radius, args);
 		assertThat(radiusByMemberWithArgsResult.getContent()).isNotEmpty();
 	}
 
@@ -159,12 +162,14 @@ class JedisClientGeoCommandsIntegrationTests {
 		GeoShape shape = GeoShape.byRadius(new Distance(200, Metrics.KILOMETERS));
 		GeoSearchCommandArgs args = GeoSearchCommandArgs.newGeoSearchArgs().includeDistance().includeCoordinates();
 
-		GeoResults<GeoLocation<byte[]>> searchResult = connection.geoCommands().geoSearch("cities".getBytes(), reference, shape, args);
+		GeoResults<GeoLocation<byte[]>> searchResult = connection.geoCommands().geoSearch("cities".getBytes(), reference,
+				shape, args);
 		assertThat(searchResult.getContent()).isNotEmpty();
 
 		// Test geoSearchStore - search and store results
 		GeoSearchStoreCommandArgs storeArgs = GeoSearchStoreCommandArgs.newGeoSearchStoreArgs();
-		Long storeResult = connection.geoCommands().geoSearchStore("dest".getBytes(), "cities".getBytes(), reference, shape, storeArgs);
+		Long storeResult = connection.geoCommands().geoSearchStore("dest".getBytes(), "cities".getBytes(), reference, shape,
+				storeArgs);
 		assertThat(storeResult).isGreaterThan(0L);
 	}
 
@@ -219,7 +224,8 @@ class JedisClientGeoCommandsIntegrationTests {
 		connection.openPipeline();
 		connection.geoCommands().geoAdd("pipeCities".getBytes(), new Point(12.496366, 41.902782), "Rome".getBytes());
 		connection.geoCommands().geoPos("pipeCities".getBytes(), "Palermo".getBytes(), "Rome".getBytes());
-		connection.geoCommands().geoDist("pipeCities".getBytes(), "Palermo".getBytes(), "Catania".getBytes(), Metrics.KILOMETERS);
+		connection.geoCommands().geoDist("pipeCities".getBytes(), "Palermo".getBytes(), "Catania".getBytes(),
+				Metrics.KILOMETERS);
 		connection.geoCommands().geoHash("pipeCities".getBytes(), "Palermo".getBytes(), "Catania".getBytes());
 		connection.geoCommands().geoRemove("pipeCities".getBytes(), "Rome".getBytes());
 		List<Object> results = connection.closePipeline();
@@ -237,4 +243,3 @@ class JedisClientGeoCommandsIntegrationTests {
 		assertThat(results.get(4)).isEqualTo(1L); // geoRemove result
 	}
 }
-

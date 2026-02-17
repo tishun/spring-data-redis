@@ -38,8 +38,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Integration tests for {@link JedisClientKeyCommands} in cluster mode.
- * Tests all methods in direct and pipelined modes (transactions not supported in cluster).
+ * Integration tests for {@link JedisClientKeyCommands} in cluster mode. Tests all methods in direct and pipelined modes
+ * (transactions not supported in cluster).
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -53,8 +53,8 @@ class JedisClientClusterKeyCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode(SettingsUtils.getHost(), SettingsUtils.getClusterPort());
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode(SettingsUtils.getHost(),
+				SettingsUtils.getClusterPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = factory.getClusterConnection();
@@ -206,4 +206,3 @@ class JedisClientClusterKeyCommandsIntegrationTests {
 		assertThat(refcountResult).isNotNull();
 	}
 }
-

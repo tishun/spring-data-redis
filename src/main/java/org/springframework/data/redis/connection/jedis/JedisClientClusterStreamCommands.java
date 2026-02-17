@@ -82,8 +82,8 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 		XAddParams params = StreamConverters.toXAddParams(record.getId(), options);
 
 		try {
-			return RecordId
-					.of(JedisConverters.toString(connection.getClusterClient().xadd(record.getStream(), record.getValue(), params)));
+			return RecordId.of(
+					JedisConverters.toString(connection.getClusterClient().xadd(record.getStream(), record.getValue(), params)));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -152,8 +152,7 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 
 		try {
 			return StreamConverters.toStreamEntryDeletionResults(connection.getClusterClient().xdelex(key,
-					StreamConverters.toStreamDeletionPolicy(options),
-					entryIdsToBytes(Arrays.asList(recordIds))));
+					StreamConverters.toStreamDeletionPolicy(options), entryIdsToBytes(Arrays.asList(recordIds))));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -167,9 +166,9 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 		Assert.notNull(recordIds, "recordIds must not be null");
 
 		try {
-			return StreamConverters.toStreamEntryDeletionResults(connection.getClusterClient().xackdel(key, JedisConverters.toBytes(group),
-					StreamConverters.toStreamDeletionPolicy(options),
-					entryIdsToBytes(Arrays.asList(recordIds))));
+			return StreamConverters
+					.toStreamEntryDeletionResults(connection.getClusterClient().xackdel(key, JedisConverters.toBytes(group),
+							StreamConverters.toStreamDeletionPolicy(options), entryIdsToBytes(Arrays.asList(recordIds))));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -323,8 +322,8 @@ class JedisClientClusterStreamCommands implements RedisStreamCommands {
 		int count = limit.isUnlimited() ? Integer.MAX_VALUE : limit.getCount();
 
 		try {
-			return convertToByteRecord(key, connection.getClusterClient().xrange(key, JedisConverters.toBytes(getLowerValue(range)),
-					JedisConverters.toBytes(getUpperValue(range)), count));
+			return convertToByteRecord(key, connection.getClusterClient().xrange(key,
+					JedisConverters.toBytes(getLowerValue(range)), JedisConverters.toBytes(getUpperValue(range)), count));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}

@@ -288,7 +288,7 @@ abstract class JedisConverters extends Converters {
 			case NOT -> BitOP.NOT;
 			case XOR -> BitOP.XOR;
 			case DIFF -> BitOP.DIFF;
-			case DIFF1 ->  BitOP.DIFF1;
+			case DIFF1 -> BitOP.DIFF1;
 			case ANDOR -> BitOP.ANDOR;
 			case ONE -> BitOP.ONE;
 		};

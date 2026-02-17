@@ -30,8 +30,8 @@ import org.springframework.data.redis.test.extension.JedisExtension;
 import java.util.List;
 
 /**
- * Integration tests for {@link JedisClientHyperLogLogCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientHyperLogLogCommands}. Tests all methods in direct, transaction, and pipelined
+ * modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -45,8 +45,8 @@ class JedisClientHyperLogLogCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -67,7 +67,8 @@ class JedisClientHyperLogLogCommandsIntegrationTests {
 	@Test
 	void hyperLogLogOperationsShouldWork() {
 		// Test pfAdd - add elements to HyperLogLog
-		Long addResult1 = connection.hyperLogLogCommands().pfAdd("hll1".getBytes(), "a".getBytes(), "b".getBytes(), "c".getBytes());
+		Long addResult1 = connection.hyperLogLogCommands().pfAdd("hll1".getBytes(), "a".getBytes(), "b".getBytes(),
+				"c".getBytes());
 		assertThat(addResult1).isEqualTo(1L); // 1 means HLL was modified
 
 		// Add more elements
@@ -83,7 +84,8 @@ class JedisClientHyperLogLogCommandsIntegrationTests {
 		assertThat(countResult).isEqualTo(5L); // Approximate count of unique elements
 
 		// Create another HLL
-		connection.hyperLogLogCommands().pfAdd("hll2".getBytes(), "c".getBytes(), "d".getBytes(), "f".getBytes(), "g".getBytes());
+		connection.hyperLogLogCommands().pfAdd("hll2".getBytes(), "c".getBytes(), "d".getBytes(), "f".getBytes(),
+				"g".getBytes());
 
 		// Test pfCount - count unique elements across multiple HLLs
 		Long countMultiResult = connection.hyperLogLogCommands().pfCount("hll1".getBytes(), "hll2".getBytes());
@@ -141,4 +143,3 @@ class JedisClientHyperLogLogCommandsIntegrationTests {
 		assertThat((Long) results.get(4)).isGreaterThanOrEqualTo(5L); // pfCount result after merge
 	}
 }
-

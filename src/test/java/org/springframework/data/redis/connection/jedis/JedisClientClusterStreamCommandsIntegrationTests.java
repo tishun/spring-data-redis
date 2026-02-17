@@ -40,8 +40,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Integration tests for {@link JedisClientStreamCommands} in cluster mode.
- * Tests all methods in direct and pipelined modes (transactions not supported in cluster).
+ * Integration tests for {@link JedisClientStreamCommands} in cluster mode. Tests all methods in direct and pipelined
+ * modes (transactions not supported in cluster).
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -55,8 +55,8 @@ class JedisClientClusterStreamCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode(SettingsUtils.getHost(), SettingsUtils.getClusterPort());
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode(SettingsUtils.getHost(),
+				SettingsUtils.getClusterPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = factory.getClusterConnection();
@@ -80,7 +80,7 @@ class JedisClientClusterStreamCommandsIntegrationTests {
 		Map<byte[], byte[]> body = new HashMap<>();
 		body.put("field1".getBytes(), "value1".getBytes());
 		body.put("field2".getBytes(), "value2".getBytes());
-		
+
 		RecordId recordId = connection.streamCommands().xAdd("stream1".getBytes(), body);
 		assertThat(recordId).isNotNull();
 
@@ -93,13 +93,13 @@ class JedisClientClusterStreamCommandsIntegrationTests {
 		connection.streamCommands().xAdd("stream1".getBytes(), body2);
 
 		// Test xRange - get range of entries
-		List<ByteRecord> xRangeResult = connection.streamCommands().xRange("stream1".getBytes(), 
-				Range.unbounded(), Limit.unlimited());
+		List<ByteRecord> xRangeResult = connection.streamCommands().xRange("stream1".getBytes(), Range.unbounded(),
+				Limit.unlimited());
 		assertThat(xRangeResult).hasSize(2);
 
 		// Test xRevRange - get reverse range
-		List<ByteRecord> xRevRangeResult = connection.streamCommands().xRevRange("stream1".getBytes(), 
-				Range.unbounded(), Limit.unlimited());
+		List<ByteRecord> xRevRangeResult = connection.streamCommands().xRevRange("stream1".getBytes(), Range.unbounded(),
+				Limit.unlimited());
 		assertThat(xRevRangeResult).hasSize(2);
 
 		// Test xDel - delete entry
@@ -139,7 +139,8 @@ class JedisClientClusterStreamCommandsIntegrationTests {
 		RecordId recordId = connection.streamCommands().xAdd("stream1".getBytes(), body);
 
 		// Test xGroupCreate - create consumer group
-		String xGroupCreateResult = connection.streamCommands().xGroupCreate("stream1".getBytes(), "group1", ReadOffset.from("0"));
+		String xGroupCreateResult = connection.streamCommands().xGroupCreate("stream1".getBytes(), "group1",
+				ReadOffset.from("0"));
 		assertThat(xGroupCreateResult).isEqualTo("OK");
 
 		// Test xReadGroup - read from consumer group
@@ -208,4 +209,3 @@ class JedisClientClusterStreamCommandsIntegrationTests {
 		assertThat(xClaimJustIdResult).isNotEmpty();
 	}
 }
-

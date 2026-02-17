@@ -33,8 +33,8 @@ import org.springframework.data.redis.test.extension.JedisExtension;
 import java.util.List;
 
 /**
- * Integration tests for {@link JedisClientListCommands} in cluster mode.
- * Tests all methods in direct and pipelined modes (transactions not supported in cluster).
+ * Integration tests for {@link JedisClientListCommands} in cluster mode. Tests all methods in direct and pipelined
+ * modes (transactions not supported in cluster).
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -48,8 +48,8 @@ class JedisClientClusterListCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode(SettingsUtils.getHost(), SettingsUtils.getClusterPort());
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode(SettingsUtils.getHost(),
+				SettingsUtils.getClusterPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = factory.getClusterConnection();
@@ -138,7 +138,8 @@ class JedisClientClusterListCommandsIntegrationTests {
 		assertThat(connection.listCommands().lIndex("list1".getBytes(), 1)).isEqualTo("newValue".getBytes());
 
 		// Test lInsert - insert before/after element
-		Long lInsertResult = connection.listCommands().lInsert("list1".getBytes(), Position.BEFORE, "newValue".getBytes(), "inserted".getBytes());
+		Long lInsertResult = connection.listCommands().lInsert("list1".getBytes(), Position.BEFORE, "newValue".getBytes(),
+				"inserted".getBytes());
 		assertThat(lInsertResult).isGreaterThan(0L);
 
 		// Test lRem - remove elements
@@ -158,7 +159,8 @@ class JedisClientClusterListCommandsIntegrationTests {
 		connection.listCommands().rPush("{tag}list2".getBytes(), "x".getBytes());
 
 		// Test lMove - move element between lists
-		byte[] lMoveResult = connection.listCommands().lMove("{tag}list1".getBytes(), "{tag}list2".getBytes(), Direction.RIGHT, Direction.LEFT);
+		byte[] lMoveResult = connection.listCommands().lMove("{tag}list1".getBytes(), "{tag}list2".getBytes(),
+				Direction.RIGHT, Direction.LEFT);
 		assertThat(lMoveResult).isEqualTo("c".getBytes());
 		assertThat(connection.listCommands().lLen("{tag}list1".getBytes())).isEqualTo(2L);
 		assertThat(connection.listCommands().lLen("{tag}list2".getBytes())).isEqualTo(2L);
@@ -186,7 +188,8 @@ class JedisClientClusterListCommandsIntegrationTests {
 		// Test bLMove - blocking move
 		connection.listCommands().rPush("{tag}list2".getBytes(), "a".getBytes());
 		connection.listCommands().rPush("{tag}list3".getBytes(), "x".getBytes());
-		byte[] bLMoveResult = connection.listCommands().bLMove("{tag}list2".getBytes(), "{tag}list3".getBytes(), Direction.RIGHT, Direction.LEFT, 1);
+		byte[] bLMoveResult = connection.listCommands().bLMove("{tag}list2".getBytes(), "{tag}list3".getBytes(),
+				Direction.RIGHT, Direction.LEFT, 1);
 		assertThat(bLMoveResult).isEqualTo("a".getBytes());
 
 		// Test bRPopLPush - blocking right pop left push
@@ -196,4 +199,3 @@ class JedisClientClusterListCommandsIntegrationTests {
 		assertThat(bRPopLPushResult).isEqualTo("b".getBytes());
 	}
 }
-

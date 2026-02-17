@@ -31,8 +31,7 @@ import org.springframework.data.redis.test.extension.JedisExtension;
 import java.util.List;
 
 /**
- * Integration tests for {@link JedisClientListCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientListCommands}. Tests all methods in direct, transaction, and pipelined modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -46,8 +45,8 @@ class JedisClientListCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -68,7 +67,8 @@ class JedisClientListCommandsIntegrationTests {
 	@Test
 	void basicPushPopOperationsShouldWork() {
 		// Test rPush - push to right (tail)
-		Long rPushResult = connection.listCommands().rPush("list1".getBytes(), "v1".getBytes(), "v2".getBytes(), "v3".getBytes());
+		Long rPushResult = connection.listCommands().rPush("list1".getBytes(), "v1".getBytes(), "v2".getBytes(),
+				"v3".getBytes());
 		assertThat(rPushResult).isEqualTo(3L);
 
 		// Test lPush - push to left (head)
@@ -138,7 +138,8 @@ class JedisClientListCommandsIntegrationTests {
 	@Test
 	void listModificationOperationsShouldWork() {
 		// Set up list
-		connection.listCommands().rPush("list3".getBytes(), "v1".getBytes(), "v2".getBytes(), "v3".getBytes(), "v4".getBytes());
+		connection.listCommands().rPush("list3".getBytes(), "v1".getBytes(), "v2".getBytes(), "v3".getBytes(),
+				"v4".getBytes());
 
 		// Test lSet - set element at index
 		connection.listCommands().lSet("list3".getBytes(), 1, "v2-modified".getBytes());
@@ -146,7 +147,8 @@ class JedisClientListCommandsIntegrationTests {
 		assertThat(modified).isEqualTo("v2-modified".getBytes());
 
 		// Test lInsert - insert before/after element
-		Long insertResult = connection.listCommands().lInsert("list3".getBytes(), RedisListCommands.Position.BEFORE, "v3".getBytes(), "v2.5".getBytes());
+		Long insertResult = connection.listCommands().lInsert("list3".getBytes(), RedisListCommands.Position.BEFORE,
+				"v3".getBytes(), "v2.5".getBytes());
 		assertThat(insertResult).isEqualTo(5L);
 
 		// Test lRem - remove elements
@@ -167,7 +169,7 @@ class JedisClientListCommandsIntegrationTests {
 
 		// Test lMove - move element from one list to another
 		byte[] movedElement = connection.listCommands().lMove("src".getBytes(), "dst".getBytes(),
-			RedisListCommands.Direction.LEFT, RedisListCommands.Direction.RIGHT);
+				RedisListCommands.Direction.LEFT, RedisListCommands.Direction.RIGHT);
 		assertThat(movedElement).isEqualTo("v1".getBytes());
 		assertThat(connection.listCommands().lLen("src".getBytes())).isEqualTo(2L);
 		assertThat(connection.listCommands().lLen("dst".getBytes())).isEqualTo(1L);
@@ -197,7 +199,7 @@ class JedisClientListCommandsIntegrationTests {
 
 		// Test bLMove - blocking move
 		byte[] bLMoveResult = connection.listCommands().bLMove("blist2".getBytes(), "blist1".getBytes(),
-			RedisListCommands.Direction.LEFT, RedisListCommands.Direction.RIGHT, 1.0);
+				RedisListCommands.Direction.LEFT, RedisListCommands.Direction.RIGHT, 1.0);
 		assertThat(bLMoveResult).isEqualTo("v3".getBytes());
 
 		// Test bRPopLPush - blocking pop from right and push to left
@@ -261,4 +263,3 @@ class JedisClientListCommandsIntegrationTests {
 		assertThat(results.get(5)).isEqualTo("v4".getBytes()); // rPop result
 	}
 }
-

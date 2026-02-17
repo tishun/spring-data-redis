@@ -31,8 +31,8 @@ import org.springframework.data.redis.test.extension.JedisExtension;
 import java.util.List;
 
 /**
- * Integration tests for {@link JedisClientHyperLogLogCommands} in cluster mode.
- * Tests all methods in direct and pipelined modes (transactions not supported in cluster).
+ * Integration tests for {@link JedisClientHyperLogLogCommands} in cluster mode. Tests all methods in direct and
+ * pipelined modes (transactions not supported in cluster).
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -46,8 +46,8 @@ class JedisClientClusterHyperLogLogCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode(SettingsUtils.getHost(), SettingsUtils.getClusterPort());
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode(SettingsUtils.getHost(),
+				SettingsUtils.getClusterPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = factory.getClusterConnection();
@@ -68,7 +68,8 @@ class JedisClientClusterHyperLogLogCommandsIntegrationTests {
 	@Test
 	void hyperLogLogOperationsShouldWork() {
 		// Test pfAdd - add elements
-		Long pfAddResult = connection.hyperLogLogCommands().pfAdd("hll1".getBytes(), "a".getBytes(), "b".getBytes(), "c".getBytes());
+		Long pfAddResult = connection.hyperLogLogCommands().pfAdd("hll1".getBytes(), "a".getBytes(), "b".getBytes(),
+				"c".getBytes());
 		assertThat(pfAddResult).isEqualTo(1L);
 
 		// Add more elements
@@ -80,7 +81,8 @@ class JedisClientClusterHyperLogLogCommandsIntegrationTests {
 		assertThat(pfCountResult).isGreaterThanOrEqualTo(5L);
 
 		// Create another HLL
-		connection.hyperLogLogCommands().pfAdd("{tag}hll2".getBytes(), "c".getBytes(), "d".getBytes(), "e".getBytes(), "f".getBytes());
+		connection.hyperLogLogCommands().pfAdd("{tag}hll2".getBytes(), "c".getBytes(), "d".getBytes(), "e".getBytes(),
+				"f".getBytes());
 		connection.hyperLogLogCommands().pfAdd("{tag}hll3".getBytes(), "a".getBytes(), "b".getBytes());
 
 		// Test pfCount with multiple keys
@@ -88,9 +90,9 @@ class JedisClientClusterHyperLogLogCommandsIntegrationTests {
 		assertThat(pfCountMultiResult).isGreaterThanOrEqualTo(4L);
 
 		// Test pfMerge - merge HLLs
-		connection.hyperLogLogCommands().pfMerge("{tag}hllMerged".getBytes(), "{tag}hll2".getBytes(), "{tag}hll3".getBytes());
+		connection.hyperLogLogCommands().pfMerge("{tag}hllMerged".getBytes(), "{tag}hll2".getBytes(),
+				"{tag}hll3".getBytes());
 		Long pfCountMergedResult = connection.hyperLogLogCommands().pfCount("{tag}hllMerged".getBytes());
 		assertThat(pfCountMergedResult).isGreaterThanOrEqualTo(4L);
 	}
 }
-

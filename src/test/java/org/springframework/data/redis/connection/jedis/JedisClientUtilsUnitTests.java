@@ -93,4 +93,3 @@ class JedisClientUtilsUnitTests {
 		assertThat(cmd2.getRaw()).isEqualTo("UNKNOWN2".getBytes());
 	}
 }
-

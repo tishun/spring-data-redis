@@ -53,9 +53,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(values, "Values must not be null");
 		Assert.noNullElements(values, "Values must not contain null elements");
 
-		return connection.execute(
-				client -> client.sadd(key, values),
-				pipeline -> pipeline.sadd(key, values));
+		return connection.execute(client -> client.sadd(key, values), pipeline -> pipeline.sadd(key, values));
 	}
 
 	@Override
@@ -63,9 +61,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.scard(key),
-				pipeline -> pipeline.scard(key));
+		return connection.execute(client -> client.scard(key), pipeline -> pipeline.scard(key));
 	}
 
 	@Override
@@ -74,9 +70,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(keys, "Keys must not be null");
 		Assert.noNullElements(keys, "Keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.sdiff(keys),
-				pipeline -> pipeline.sdiff(keys));
+		return connection.execute(client -> client.sdiff(keys), pipeline -> pipeline.sdiff(keys));
 	}
 
 	@Override
@@ -86,8 +80,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(keys, "Source keys must not be null");
 		Assert.noNullElements(keys, "Source keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.sdiffstore(destKey, keys),
+		return connection.execute(client -> client.sdiffstore(destKey, keys),
 				pipeline -> pipeline.sdiffstore(destKey, keys));
 	}
 
@@ -97,9 +90,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(keys, "Keys must not be null");
 		Assert.noNullElements(keys, "Keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.sinter(keys),
-				pipeline -> pipeline.sinter(keys));
+		return connection.execute(client -> client.sinter(keys), pipeline -> pipeline.sinter(keys));
 	}
 
 	@Override
@@ -109,8 +100,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(keys, "Source keys must not be null");
 		Assert.noNullElements(keys, "Source keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.sinterstore(destKey, keys),
+		return connection.execute(client -> client.sinterstore(destKey, keys),
 				pipeline -> pipeline.sinterstore(destKey, keys));
 	}
 
@@ -120,9 +110,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(keys, "Keys must not be null");
 		Assert.noNullElements(keys, "Keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.sintercard(keys),
-				pipeline -> pipeline.sintercard(keys));
+		return connection.execute(client -> client.sintercard(keys), pipeline -> pipeline.sintercard(keys));
 	}
 
 	@Override
@@ -131,9 +119,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.sismember(key, value),
-				pipeline -> pipeline.sismember(key, value));
+		return connection.execute(client -> client.sismember(key, value), pipeline -> pipeline.sismember(key, value));
 	}
 
 	@Override
@@ -143,9 +129,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(values, "Values must not be null");
 		Assert.noNullElements(values, "Values must not contain null elements");
 
-		return connection.execute(
-				client -> client.smismember(key, values),
-				pipeline -> pipeline.smismember(key, values));
+		return connection.execute(client -> client.smismember(key, values), pipeline -> pipeline.smismember(key, values));
 	}
 
 	@Override
@@ -153,9 +137,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.smembers(key),
-				pipeline -> pipeline.smembers(key));
+		return connection.execute(client -> client.smembers(key), pipeline -> pipeline.smembers(key));
 	}
 
 	@Override
@@ -165,10 +147,8 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(destKey, "Destination key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.smove(srcKey, destKey, value),
-				pipeline -> pipeline.smove(srcKey, destKey, value),
-				JedisConverters::toBoolean);
+		return connection.execute(client -> client.smove(srcKey, destKey, value),
+				pipeline -> pipeline.smove(srcKey, destKey, value), JedisConverters::toBoolean);
 	}
 
 	@Override
@@ -176,9 +156,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.spop(key),
-				pipeline -> pipeline.spop(key));
+		return connection.execute(client -> client.spop(key), pipeline -> pipeline.spop(key));
 	}
 
 	@Override
@@ -186,10 +164,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.spop(key, count),
-				pipeline -> pipeline.spop(key, count),
-                ArrayList::new);
+		return connection.execute(client -> client.spop(key, count), pipeline -> pipeline.spop(key, count), ArrayList::new);
 	}
 
 	@Override
@@ -197,9 +172,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.srandmember(key),
-				pipeline -> pipeline.srandmember(key));
+		return connection.execute(client -> client.srandmember(key), pipeline -> pipeline.srandmember(key));
 	}
 
 	@Override
@@ -211,8 +184,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 			throw new IllegalArgumentException("Count must be less than Integer.MAX_VALUE for sRandMember in Jedis");
 		}
 
-		return connection.execute(
-				client -> client.srandmember(key, (int) count),
+		return connection.execute(client -> client.srandmember(key, (int) count),
 				pipeline -> pipeline.srandmember(key, (int) count));
 	}
 
@@ -223,9 +195,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(values, "Values must not be null");
 		Assert.noNullElements(values, "Values must not contain null elements");
 
-		return connection.execute(
-				client -> client.srem(key, values),
-				pipeline -> pipeline.srem(key, values));
+		return connection.execute(client -> client.srem(key, values), pipeline -> pipeline.srem(key, values));
 	}
 
 	@Override
@@ -234,9 +204,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(keys, "Keys must not be null");
 		Assert.noNullElements(keys, "Keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.sunion(keys),
-				pipeline -> pipeline.sunion(keys));
+		return connection.execute(client -> client.sunion(keys), pipeline -> pipeline.sunion(keys));
 	}
 
 	@Override
@@ -246,8 +214,7 @@ class JedisClientSetCommands implements RedisSetCommands {
 		Assert.notNull(keys, "Source keys must not be null");
 		Assert.noNullElements(keys, "Source keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.sunionstore(destKey, keys),
+		return connection.execute(client -> client.sunionstore(destKey, keys),
 				pipeline -> pipeline.sunionstore(destKey, keys));
 	}
 

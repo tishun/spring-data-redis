@@ -69,9 +69,9 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 		connection.set("key2", "value2");
 		connection.get("key1");
 		connection.get("key2");
-		
+
 		var results = connection.closePipeline();
-		
+
 		assertThat(results).hasSize(4);
 		assertThat(results.get(2)).isEqualTo("value1");
 		assertThat(results.get(3)).isEqualTo("value2");
@@ -83,9 +83,9 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 		connection.set("txKey1", "txValue1");
 		connection.set("txKey2", "txValue2");
 		connection.get("txKey1");
-		
+
 		var results = connection.exec();
-		
+
 		assertThat(results).isNotNull();
 		assertThat(results).hasSize(3);
 		assertThat(results.get(2)).isEqualTo("txValue1");
@@ -122,13 +122,13 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 	void shouldSelectDatabase() {
 		connection.select(1);
 		connection.set("dbKey", "dbValue");
-		
+
 		connection.select(0);
 		assertThat(connection.get("dbKey")).isNull();
-		
+
 		connection.select(1);
 		assertThat(connection.get("dbKey")).isEqualTo("dbValue");
-		
+
 		// Clean up
 		connection.del("dbKey");
 		connection.select(0);
@@ -137,16 +137,16 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 	@Test
 	void shouldHandleWatchUnwatch() {
 		connection.set("watchKey", "initialValue");
-		
+
 		connection.watch("watchKey".getBytes());
 		connection.multi();
 		connection.set("watchKey", "newValue");
-		
+
 		var results = connection.exec();
-		
+
 		assertThat(results).isNotNull();
 		assertThat(connection.get("watchKey")).isEqualTo("newValue");
-		
+
 		connection.unwatch();
 	}
 
@@ -154,7 +154,7 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 	void shouldHandleHashOperations() {
 		connection.hSet("hash", "field1", "value1");
 		connection.hSet("hash", "field2", "value2");
-		
+
 		assertThat(connection.hGet("hash", "field1")).isEqualTo("value1");
 		assertThat(connection.hGet("hash", "field2")).isEqualTo("value2");
 		assertThat(connection.hLen("hash")).isEqualTo(2L);
@@ -165,7 +165,7 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 		connection.lPush("list", "value1");
 		connection.lPush("list", "value2");
 		connection.rPush("list", "value3");
-		
+
 		assertThat(connection.lLen("list")).isEqualTo(3L);
 		assertThat(connection.lPop("list")).isEqualTo("value2");
 		assertThat(connection.rPop("list")).isEqualTo("value3");
@@ -264,4 +264,3 @@ public class JedisClientConnectionIntegrationTests extends AbstractConnectionInt
 		});
 	}
 }
-

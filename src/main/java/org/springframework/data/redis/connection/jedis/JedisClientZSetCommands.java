@@ -65,10 +65,8 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.zadd(key, score, value, JedisConverters.toZAddParams(args)),
-				pipeline -> pipeline.zadd(key, score, value, JedisConverters.toZAddParams(args)),
-				JedisConverters::toBoolean);
+		return connection.execute(client -> client.zadd(key, score, value, JedisConverters.toZAddParams(args)),
+				pipeline -> pipeline.zadd(key, score, value, JedisConverters.toZAddParams(args)), JedisConverters::toBoolean);
 	}
 
 	@Override
@@ -91,9 +89,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(values, "Values must not be null");
 		Assert.noNullElements(values, "Values must not contain null elements");
 
-		return connection.execute(
-				client -> client.zrem(key, values),
-				pipeline -> pipeline.zrem(key, values));
+		return connection.execute(client -> client.zrem(key, values), pipeline -> pipeline.zrem(key, values));
 	}
 
 	@Override
@@ -102,8 +98,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.zincrby(key, increment, value),
+		return connection.execute(client -> client.zincrby(key, increment, value),
 				pipeline -> pipeline.zincrby(key, increment, value));
 	}
 
@@ -112,9 +107,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zrandmember(key),
-				pipeline -> pipeline.zrandmember(key));
+		return connection.execute(client -> client.zrandmember(key), pipeline -> pipeline.zrandmember(key));
 	}
 
 	@Override
@@ -122,9 +115,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-        return connection.execute(
-                client -> client.zrandmember(key, count),
-                pipeline -> pipeline.zrandmember(key, count));
+		return connection.execute(client -> client.zrandmember(key, count), pipeline -> pipeline.zrandmember(key, count));
 	}
 
 	@Override
@@ -132,10 +123,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zrandmemberWithScores(key, 1L),
+		return connection.execute(client -> client.zrandmemberWithScores(key, 1L),
 				pipeline -> pipeline.zrandmemberWithScores(key, 1L),
-                result -> result.isEmpty() ? null : JedisConverters.toTuple(result.iterator().next()));
+				result -> result.isEmpty() ? null : JedisConverters.toTuple(result.iterator().next()));
 	}
 
 	@Override
@@ -143,10 +133,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zrandmemberWithScores(key, count),
+		return connection.execute(client -> client.zrandmemberWithScores(key, count),
 				pipeline -> pipeline.zrandmemberWithScores(key, count),
-                result -> result.stream().map(JedisConverters::toTuple).toList());
+				result -> result.stream().map(JedisConverters::toTuple).toList());
 	}
 
 	@Override
@@ -155,9 +144,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.zrank(key, value),
-				pipeline -> pipeline.zrank(key, value));
+		return connection.execute(client -> client.zrank(key, value), pipeline -> pipeline.zrank(key, value));
 	}
 
 	@Override
@@ -165,9 +152,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zrevrank(key, value),
-				pipeline -> pipeline.zrevrank(key, value));
+		return connection.execute(client -> client.zrevrank(key, value), pipeline -> pipeline.zrevrank(key, value));
 	}
 
 	@Override
@@ -175,9 +160,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zrange(key, start, end),
-				pipeline -> pipeline.zrange(key, start, end),
+		return connection.execute(client -> client.zrange(key, start, end), pipeline -> pipeline.zrange(key, start, end),
 				JedisConverters::toSet);
 	}
 
@@ -186,11 +169,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zrangeWithScores(key, start, end),
+		return connection.execute(client -> client.zrangeWithScores(key, start, end),
 				pipeline -> pipeline.zrangeWithScores(key, start, end),
-                result -> result.stream().map(JedisConverters::toTuple)
-						.collect(toCollection(LinkedHashSet::new)));
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -211,14 +192,11 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 			return connection.execute(
 					client -> client.zrangeByScoreWithScores(key, min, max, limit.getOffset(), limit.getCount()),
 					pipeline -> pipeline.zrangeByScoreWithScores(key, min, max, limit.getOffset(), limit.getCount()),
-                    result -> result.stream().map(JedisConverters::toTuple)
-                            .collect(toCollection(LinkedHashSet::new)));
+					result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 		} else {
-			return connection.execute(
-					client -> client.zrangeByScoreWithScores(key, min, max),
+			return connection.execute(client -> client.zrangeByScoreWithScores(key, min, max),
 					pipeline -> pipeline.zrangeByScoreWithScores(key, min, max),
-                    result -> result.stream().map(JedisConverters::toTuple)
-                            .collect(toCollection(LinkedHashSet::new)));
+					result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 		}
 	}
 
@@ -227,10 +205,8 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zrevrange(key, start, end),
-				pipeline -> pipeline.zrevrange(key, start, end),
-				JedisConverters::toSet);
+		return connection.execute(client -> client.zrevrange(key, start, end),
+				pipeline -> pipeline.zrevrange(key, start, end), JedisConverters::toSet);
 	}
 
 	@Override
@@ -238,11 +214,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zrevrangeWithScores(key, start, end),
+		return connection.execute(client -> client.zrevrangeWithScores(key, start, end),
 				pipeline -> pipeline.zrevrangeWithScores(key, start, end),
-                result -> result.stream().map(JedisConverters::toTuple)
-                        .collect(toCollection(LinkedHashSet::new)));
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -260,15 +234,12 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 				JedisConverters.POSITIVE_INFINITY_BYTES);
 
 		if (!limit.isUnlimited()) {
-			return connection.execute(
-					client -> client.zrevrangeByScore(key, max, min, limit.getOffset(), limit.getCount()),
+			return connection.execute(client -> client.zrevrangeByScore(key, max, min, limit.getOffset(), limit.getCount()),
 					pipeline -> pipeline.zrevrangeByScore(key, max, min, limit.getOffset(), limit.getCount()),
 					JedisConverters::toSet);
 		} else {
-			return connection.execute(
-					client -> client.zrevrangeByScore(key, max, min),
-					pipeline -> pipeline.zrevrangeByScore(key, max, min),
-					JedisConverters::toSet);
+			return connection.execute(client -> client.zrevrangeByScore(key, max, min),
+					pipeline -> pipeline.zrevrangeByScore(key, max, min), JedisConverters::toSet);
 		}
 	}
 
@@ -290,14 +261,11 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 			return connection.execute(
 					client -> client.zrevrangeByScoreWithScores(key, max, min, limit.getOffset(), limit.getCount()),
 					pipeline -> pipeline.zrevrangeByScoreWithScores(key, max, min, limit.getOffset(), limit.getCount()),
-                    result -> result.stream().map(JedisConverters::toTuple)
-                            .collect(toCollection(LinkedHashSet::new)));
+					result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 		} else {
-			return connection.execute(
-					client -> client.zrevrangeByScoreWithScores(key, max, min),
+			return connection.execute(client -> client.zrevrangeByScoreWithScores(key, max, min),
 					pipeline -> pipeline.zrevrangeByScoreWithScores(key, max, min),
-                    result -> result.stream().map(JedisConverters::toTuple)
-                            .collect(toCollection(LinkedHashSet::new)));
+					result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 		}
 	}
 
@@ -306,13 +274,12 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zcount(key, min, max),
-				pipeline -> pipeline.zcount(key, min, max));
+		return connection.execute(client -> client.zcount(key, min, max), pipeline -> pipeline.zcount(key, min, max));
 	}
 
 	@Override
-	public Long zCount(byte @NonNull [] key, org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range) {
+	public Long zCount(byte @NonNull [] key,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range must not be null");
@@ -322,9 +289,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		byte[] max = JedisConverters.boundaryToBytesForZRange(range.getUpperBound(),
 				JedisConverters.POSITIVE_INFINITY_BYTES);
 
-		return connection.execute(
-				client -> client.zcount(key, min, max),
-				pipeline -> pipeline.zcount(key, min, max));
+		return connection.execute(client -> client.zcount(key, min, max), pipeline -> pipeline.zcount(key, min, max));
 	}
 
 	@Override
@@ -336,9 +301,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		byte[] min = JedisConverters.boundaryToBytesForZRangeByLex(range.getLowerBound(), JedisConverters.MINUS_BYTES);
 		byte[] max = JedisConverters.boundaryToBytesForZRangeByLex(range.getUpperBound(), JedisConverters.PLUS_BYTES);
 
-		return connection.execute(
-				client -> client.zlexcount(key, min, max),
-				pipeline -> pipeline.zlexcount(key, min, max));
+		return connection.execute(client -> client.zlexcount(key, min, max), pipeline -> pipeline.zlexcount(key, min, max));
 	}
 
 	@Override
@@ -346,9 +309,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zpopmin(key),
-				pipeline -> pipeline.zpopmin(key),
+		return connection.execute(client -> client.zpopmin(key), pipeline -> pipeline.zpopmin(key),
 				JedisConverters::toTuple);
 	}
 
@@ -357,11 +318,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zpopmin(key, Math.toIntExact(count)),
+		return connection.execute(client -> client.zpopmin(key, Math.toIntExact(count)),
 				pipeline -> pipeline.zpopmin(key, Math.toIntExact(count)),
-                result -> result.stream().map(JedisConverters::toTuple)
-                        .collect(toCollection(LinkedHashSet::new)));
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -370,10 +329,8 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(unit, "TimeUnit must not be null");
 
-		return connection.execute(
-				client -> client.bzpopmin(JedisConverters.toSeconds(timeout, unit), key),
-				pipeline -> pipeline.bzpopmin(JedisConverters.toSeconds(timeout, unit), key),
-                JedisClientZSetCommands::toTuple);
+		return connection.execute(client -> client.bzpopmin(JedisConverters.toSeconds(timeout, unit), key),
+				pipeline -> pipeline.bzpopmin(JedisConverters.toSeconds(timeout, unit), key), JedisClientZSetCommands::toTuple);
 	}
 
 	@Override
@@ -381,9 +338,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zpopmax(key),
-				pipeline -> pipeline.zpopmax(key),
+		return connection.execute(client -> client.zpopmax(key), pipeline -> pipeline.zpopmax(key),
 				JedisConverters::toTuple);
 	}
 
@@ -392,11 +347,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zpopmax(key, Math.toIntExact(count)),
+		return connection.execute(client -> client.zpopmax(key, Math.toIntExact(count)),
 				pipeline -> pipeline.zpopmax(key, Math.toIntExact(count)),
-                result -> result.stream().map(JedisConverters::toTuple)
-                        .collect(toCollection(LinkedHashSet::new)));
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -405,10 +358,8 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(unit, "TimeUnit must not be null");
 
-		return connection.execute(
-				client -> client.bzpopmax(JedisConverters.toSeconds(timeout, unit), key),
-				pipeline -> pipeline.bzpopmax(JedisConverters.toSeconds(timeout, unit), key),
-                JedisClientZSetCommands::toTuple);
+		return connection.execute(client -> client.bzpopmax(JedisConverters.toSeconds(timeout, unit), key),
+				pipeline -> pipeline.bzpopmax(JedisConverters.toSeconds(timeout, unit), key), JedisClientZSetCommands::toTuple);
 	}
 
 	@Override
@@ -416,9 +367,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zcard(key),
-				pipeline -> pipeline.zcard(key));
+		return connection.execute(client -> client.zcard(key), pipeline -> pipeline.zcard(key));
 	}
 
 	@Override
@@ -427,9 +376,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.zscore(key, value),
-				pipeline -> pipeline.zscore(key, value));
+		return connection.execute(client -> client.zscore(key, value), pipeline -> pipeline.zscore(key, value));
 	}
 
 	@Override
@@ -438,9 +385,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(values, "Value must not be null");
 
-		return connection.execute(
-				client -> client.zmscore(key, values),
-				pipeline -> pipeline.zmscore(key, values));
+		return connection.execute(client -> client.zmscore(key, values), pipeline -> pipeline.zmscore(key, values));
 	}
 
 	@Override
@@ -448,8 +393,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.zremrangeByRank(key, start, end),
+		return connection.execute(client -> client.zremrangeByRank(key, start, end),
 				pipeline -> pipeline.zremrangeByRank(key, start, end));
 	}
 
@@ -462,8 +406,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		byte[] min = JedisConverters.boundaryToBytesForZRangeByLex(range.getLowerBound(), JedisConverters.MINUS_BYTES);
 		byte[] max = JedisConverters.boundaryToBytesForZRangeByLex(range.getUpperBound(), JedisConverters.PLUS_BYTES);
 
-		return connection.execute(
-				client -> client.zremrangeByLex(key, min, max),
+		return connection.execute(client -> client.zremrangeByLex(key, min, max),
 				pipeline -> pipeline.zremrangeByLex(key, min, max));
 	}
 
@@ -479,8 +422,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		byte[] max = JedisConverters.boundaryToBytesForZRange(range.getUpperBound(),
 				JedisConverters.POSITIVE_INFINITY_BYTES);
 
-		return connection.execute(
-				client -> client.zremrangeByScore(key, min, max),
+		return connection.execute(client -> client.zremrangeByScore(key, min, max),
 				pipeline -> pipeline.zremrangeByScore(key, min, max));
 	}
 
@@ -489,10 +431,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(sets, "Sets must not be null");
 
-		return connection.execute(
-				client -> client.zdiff(sets),
-				pipeline -> pipeline.zdiff(sets),
-				JedisConverters::toSet);
+		return connection.execute(client -> client.zdiff(sets), pipeline -> pipeline.zdiff(sets), JedisConverters::toSet);
 	}
 
 	@Override
@@ -500,11 +439,8 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(sets, "Sets must not be null");
 
-		return connection.execute(
-				client -> client.zdiffWithScores(sets),
-				pipeline -> pipeline.zdiffWithScores(sets),
-                result -> result.stream().map(JedisConverters::toTuple)
-                        .collect(toCollection(LinkedHashSet::new)));
+		return connection.execute(client -> client.zdiffWithScores(sets), pipeline -> pipeline.zdiffWithScores(sets),
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -513,8 +449,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(destKey, "Destination key must not be null");
 		Assert.notNull(sets, "Source sets must not be null");
 
-		return connection.execute(
-				client -> client.zdiffstore(destKey, sets),
+		return connection.execute(client -> client.zdiffstore(destKey, sets),
 				pipeline -> pipeline.zdiffstore(destKey, sets));
 	}
 
@@ -523,10 +458,8 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(sets, "Sets must not be null");
 
-		return connection.execute(
-				client -> client.zinter(new ZParams(), sets),
-				pipeline -> pipeline.zinter(new ZParams(), sets),
-				JedisConverters::toSet);
+		return connection.execute(client -> client.zinter(new ZParams(), sets),
+				pipeline -> pipeline.zinter(new ZParams(), sets), JedisConverters::toSet);
 	}
 
 	@Override
@@ -534,11 +467,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(sets, "Sets must not be null");
 
-		return connection.execute(
-				client -> client.zinterWithScores(new ZParams(), sets),
+		return connection.execute(client -> client.zinterWithScores(new ZParams(), sets),
 				pipeline -> pipeline.zinterWithScores(new ZParams(), sets),
-                result -> result.stream().map(JedisConverters::toTuple)
-                        .collect(toCollection(LinkedHashSet::new)));
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -550,11 +481,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.isTrue(weights.size() == sets.length,
 				"The number of weights (%d) must match the number of source sets (%d)".formatted(weights.size(), sets.length));
 
-		return connection.execute(
-				client -> client.zinterWithScores(toZParams(aggregate, weights), sets),
+		return connection.execute(client -> client.zinterWithScores(toZParams(aggregate, weights), sets),
 				pipeline -> pipeline.zinterWithScores(toZParams(aggregate, weights), sets),
-                result -> result.stream().map(JedisConverters::toTuple)
-                        .collect(toCollection(LinkedHashSet::new)));
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -569,8 +498,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		ZParams zparams = toZParams(aggregate, weights);
 
-		return connection.execute(
-				client -> client.zinterstore(destKey, zparams, sets),
+		return connection.execute(client -> client.zinterstore(destKey, zparams, sets),
 				pipeline -> pipeline.zinterstore(destKey, zparams, sets));
 	}
 
@@ -581,8 +509,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(sets, "Source sets must not be null");
 		Assert.noNullElements(sets, "Source sets must not contain null elements");
 
-		return connection.execute(
-				client -> client.zinterstore(destKey, sets),
+		return connection.execute(client -> client.zinterstore(destKey, sets),
 				pipeline -> pipeline.zinterstore(destKey, sets));
 	}
 
@@ -591,10 +518,8 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(sets, "Sets must not be null");
 
-		return connection.execute(
-				client -> client.zunion(new ZParams(), sets),
-				pipeline -> pipeline.zunion(new ZParams(), sets),
-				JedisConverters::toSet);
+		return connection.execute(client -> client.zunion(new ZParams(), sets),
+				pipeline -> pipeline.zunion(new ZParams(), sets), JedisConverters::toSet);
 	}
 
 	@Override
@@ -602,11 +527,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		Assert.notNull(sets, "Sets must not be null");
 
-		return connection.execute(
-				client -> client.zunionWithScores(new ZParams(), sets),
+		return connection.execute(client -> client.zunionWithScores(new ZParams(), sets),
 				pipeline -> pipeline.zunionWithScores(new ZParams(), sets),
-                result -> result.stream().map(JedisConverters::toTuple)
-                        .collect(toCollection(LinkedHashSet::new)));
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -618,11 +541,9 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.isTrue(weights.size() == sets.length,
 				"The number of weights %d must match the number of source sets %d".formatted(weights.size(), sets.length));
 
-		return connection.execute(
-				client -> client.zunionWithScores(toZParams(aggregate, weights), sets),
+		return connection.execute(client -> client.zunionWithScores(toZParams(aggregate, weights), sets),
 				pipeline -> pipeline.zunionWithScores(toZParams(aggregate, weights), sets),
-                result -> result.stream().map(JedisConverters::toTuple)
-                        .collect(toCollection(LinkedHashSet::new)));
+				result -> result.stream().map(JedisConverters::toTuple).collect(toCollection(LinkedHashSet::new)));
 	}
 
 	@Override
@@ -638,8 +559,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		ZParams zparams = toZParams(aggregate, weights);
 
-		return connection.execute(
-				client -> client.zunionstore(destKey, zparams, sets),
+		return connection.execute(client -> client.zunionstore(destKey, zparams, sets),
 				pipeline -> pipeline.zunionstore(destKey, zparams, sets));
 	}
 
@@ -650,8 +570,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		Assert.notNull(sets, "Source sets must not be null");
 		Assert.noNullElements(sets, "Source sets must not contain null elements");
 
-		return connection.execute(
-				client -> client.zunionstore(destKey, sets),
+		return connection.execute(client -> client.zunionstore(destKey, sets),
 				pipeline -> pipeline.zunionstore(destKey, sets));
 	}
 
@@ -674,7 +593,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 			@Override
 			protected ScanIteration<@NonNull Tuple> doScan(byte @NonNull [] key, @NonNull CursorId cursorId,
-                                                           @NonNull ScanOptions options) {
+					@NonNull ScanOptions options) {
 				if (isQueueing() || isPipelined()) {
 					throw new InvalidDataAccessApiUsageException("'ZSCAN' cannot be called in pipeline / transaction mode");
 				}
@@ -719,8 +638,10 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		}
 
 		return connection.execute(
-				client -> client.zrangeByScore(key, JedisConverters.toBytes(min), JedisConverters.toBytes(max), (int) offset, (int) count),
-				pipeline -> pipeline.zrangeByScore(key, JedisConverters.toBytes(min), JedisConverters.toBytes(max), (int) offset, (int) count),
+				client -> client.zrangeByScore(key, JedisConverters.toBytes(min), JedisConverters.toBytes(max), (int) offset,
+						(int) count),
+				pipeline -> pipeline.zrangeByScore(key, JedisConverters.toBytes(min), JedisConverters.toBytes(max),
+						(int) offset, (int) count),
 				JedisConverters::toSet);
 	}
 
@@ -739,15 +660,12 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 				JedisConverters.POSITIVE_INFINITY_BYTES);
 
 		if (!limit.isUnlimited()) {
-			return connection.execute(
-					client -> client.zrangeByScore(key, min, max, limit.getOffset(), limit.getCount()),
+			return connection.execute(client -> client.zrangeByScore(key, min, max, limit.getOffset(), limit.getCount()),
 					pipeline -> pipeline.zrangeByScore(key, min, max, limit.getOffset(), limit.getCount()),
 					JedisConverters::toSet);
 		} else {
-			return connection.execute(
-					client -> client.zrangeByScore(key, min, max),
-					pipeline -> pipeline.zrangeByScore(key, min, max),
-					JedisConverters::toSet);
+			return connection.execute(client -> client.zrangeByScore(key, min, max),
+					pipeline -> pipeline.zrangeByScore(key, min, max), JedisConverters::toSet);
 		}
 	}
 
@@ -764,15 +682,11 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		byte[] max = JedisConverters.boundaryToBytesForZRangeByLex(range.getUpperBound(), JedisConverters.PLUS_BYTES);
 
 		if (!limit.isUnlimited()) {
-			return connection.execute(
-					client -> client.zrangeByLex(key, min, max, limit.getOffset(), limit.getCount()),
-					pipeline -> pipeline.zrangeByLex(key, min, max, limit.getOffset(), limit.getCount()),
-					JedisConverters::toSet);
+			return connection.execute(client -> client.zrangeByLex(key, min, max, limit.getOffset(), limit.getCount()),
+					pipeline -> pipeline.zrangeByLex(key, min, max, limit.getOffset(), limit.getCount()), JedisConverters::toSet);
 		} else {
-			return connection.execute(
-					client -> client.zrangeByLex(key, min, max),
-					pipeline -> pipeline.zrangeByLex(key, min, max),
-					JedisConverters::toSet);
+			return connection.execute(client -> client.zrangeByLex(key, min, max),
+					pipeline -> pipeline.zrangeByLex(key, min, max), JedisConverters::toSet);
 		}
 	}
 
@@ -789,15 +703,12 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 		byte[] max = JedisConverters.boundaryToBytesForZRangeByLex(range.getUpperBound(), JedisConverters.PLUS_BYTES);
 
 		if (!limit.isUnlimited()) {
-			return connection.execute(
-					client -> client.zrevrangeByLex(key, max, min, limit.getOffset(), limit.getCount()),
+			return connection.execute(client -> client.zrevrangeByLex(key, max, min, limit.getOffset(), limit.getCount()),
 					pipeline -> pipeline.zrevrangeByLex(key, max, min, limit.getOffset(), limit.getCount()),
 					JedisConverters::toSet);
 		} else {
-			return connection.execute(
-					client -> client.zrevrangeByLex(key, max, min),
-					pipeline -> pipeline.zrevrangeByLex(key, max, min),
-					JedisConverters::toSet);
+			return connection.execute(client -> client.zrevrangeByLex(key, max, min),
+					pipeline -> pipeline.zrevrangeByLex(key, max, min), JedisConverters::toSet);
 		}
 	}
 
@@ -829,8 +740,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		ZRangeParams zRangeParams = toZRangeParams(Protocol.Keyword.BYLEX, min, max, limit, rev);
 
-		return connection.execute(
-				client -> client.zrangestore(dstKey, srcKey, zRangeParams),
+		return connection.execute(client -> client.zrangestore(dstKey, srcKey, zRangeParams),
 				pipeline -> pipeline.zrangestore(dstKey, srcKey, zRangeParams));
 	}
 
@@ -864,8 +774,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 
 		ZRangeParams zRangeParams = toZRangeParams(Protocol.Keyword.BYSCORE, min, max, limit, rev);
 
-		return connection.execute(
-				client -> client.zrangestore(dstKey, srcKey, zRangeParams),
+		return connection.execute(client -> client.zrangestore(dstKey, srcKey, zRangeParams),
 				pipeline -> pipeline.zrangestore(dstKey, srcKey, zRangeParams));
 	}
 
@@ -884,7 +793,7 @@ class JedisClientZSetCommands implements RedisZSetCommands {
 	static ZRangeParams toZRangeParams(Protocol.Keyword by, byte[] min, byte[] max,
 			org.springframework.data.redis.connection.Limit limit, boolean rev) {
 
-        return JedisZSetCommands.toZRangeParams(by, min, max, limit, rev);
+		return JedisZSetCommands.toZRangeParams(by, min, max, limit, rev);
 	}
 
 	private @Nullable static Tuple toTuple(@Nullable KeyValue<?, redis.clients.jedis.resps.Tuple> keyValue) {

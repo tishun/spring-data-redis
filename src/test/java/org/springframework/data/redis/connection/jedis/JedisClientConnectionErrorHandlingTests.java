@@ -55,38 +55,34 @@ class JedisClientConnectionErrorHandlingTests {
 		factory.afterPropertiesSet();
 		factory.start();
 
-		assertThatExceptionOfType(RedisConnectionFailureException.class)
-				.isThrownBy(() -> factory.getConnection().ping());
+		assertThatExceptionOfType(RedisConnectionFailureException.class).isThrownBy(() -> factory.getConnection().ping());
 	}
 
 	@Test // GH-XXXX
 	void shouldFailWithInvalidPort() {
 
-		factory = new JedisClientConnectionFactory(
-				new RedisStandaloneConfiguration(SettingsUtils.getHost(), 9999));
+		factory = new JedisClientConnectionFactory(new RedisStandaloneConfiguration(SettingsUtils.getHost(), 9999));
 		factory.afterPropertiesSet();
 		factory.start();
 
-		assertThatExceptionOfType(RedisConnectionFailureException.class)
-				.isThrownBy(() -> factory.getConnection().ping());
+		assertThatExceptionOfType(RedisConnectionFailureException.class).isThrownBy(() -> factory.getConnection().ping());
 	}
 
 	@Test // GH-XXXX - DATAREDIS-714
 	void shouldFailWithInvalidDatabase() {
 
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		config.setDatabase(77);
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		factory.start();
 
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-				.isThrownBy(() -> {
-					try (RedisConnection conn = factory.getConnection()) {
-						conn.ping(); // Trigger actual connection
-					}
-				})
-				.withMessageContaining("DB index is out of range");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> {
+			try (RedisConnection conn = factory.getConnection()) {
+				conn.ping(); // Trigger actual connection
+			}
+		}).withMessageContaining("DB index is out of range");
 	}
 
 	@Test // GH-XXXX
@@ -147,4 +143,3 @@ class JedisClientConnectionErrorHandlingTests {
 		assertThatIllegalStateException().isThrownBy(() -> factory.getSentinelConnection());
 	}
 }
-

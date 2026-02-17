@@ -31,8 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Integration tests for {@link JedisClientSetCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientSetCommands}. Tests all methods in direct, transaction, and pipelined modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -46,8 +45,8 @@ class JedisClientSetCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -68,7 +67,8 @@ class JedisClientSetCommandsIntegrationTests {
 	@Test
 	void basicSetOperationsShouldWork() {
 		// Test sAdd - add members to set
-		Long addResult = connection.setCommands().sAdd("set1".getBytes(), "m1".getBytes(), "m2".getBytes(), "m3".getBytes());
+		Long addResult = connection.setCommands().sAdd("set1".getBytes(), "m1".getBytes(), "m2".getBytes(),
+				"m3".getBytes());
 		assertThat(addResult).isEqualTo(3L);
 
 		// Test sCard - get set cardinality
@@ -82,7 +82,8 @@ class JedisClientSetCommandsIntegrationTests {
 		assertThat(notMember).isFalse();
 
 		// Test sMIsMember - check multiple memberships
-		List<Boolean> mIsMember = connection.setCommands().sMIsMember("set1".getBytes(), "m1".getBytes(), "m99".getBytes(), "m2".getBytes());
+		List<Boolean> mIsMember = connection.setCommands().sMIsMember("set1".getBytes(), "m1".getBytes(), "m99".getBytes(),
+				"m2".getBytes());
 		assertThat(mIsMember).containsExactly(true, false, true);
 
 		// Test sMembers - get all members
@@ -107,7 +108,8 @@ class JedisClientSetCommandsIntegrationTests {
 		assertThat(diffResult).hasSize(1); // Only "a"
 
 		// Test sDiffStore - store difference
-		Long diffStoreResult = connection.setCommands().sDiffStore("diffDst".getBytes(), "set1".getBytes(), "set2".getBytes());
+		Long diffStoreResult = connection.setCommands().sDiffStore("diffDst".getBytes(), "set1".getBytes(),
+				"set2".getBytes());
 		assertThat(diffStoreResult).isEqualTo(1L);
 
 		// Test sInter - intersection
@@ -115,7 +117,8 @@ class JedisClientSetCommandsIntegrationTests {
 		assertThat(interResult).hasSize(2); // "b" and "c"
 
 		// Test sInterStore - store intersection
-		Long interStoreResult = connection.setCommands().sInterStore("interDst".getBytes(), "set1".getBytes(), "set2".getBytes());
+		Long interStoreResult = connection.setCommands().sInterStore("interDst".getBytes(), "set1".getBytes(),
+				"set2".getBytes());
 		assertThat(interStoreResult).isEqualTo(2L);
 
 		// Test sInterCard - intersection cardinality
@@ -127,14 +130,16 @@ class JedisClientSetCommandsIntegrationTests {
 		assertThat(unionResult).hasSize(4); // "a", "b", "c", "d"
 
 		// Test sUnionStore - store union
-		Long unionStoreResult = connection.setCommands().sUnionStore("unionDst".getBytes(), "set1".getBytes(), "set2".getBytes());
+		Long unionStoreResult = connection.setCommands().sUnionStore("unionDst".getBytes(), "set1".getBytes(),
+				"set2".getBytes());
 		assertThat(unionStoreResult).isEqualTo(4L);
 	}
 
 	@Test
 	void setRandomAndPopOperationsShouldWork() {
 		// Set up set
-		connection.setCommands().sAdd("set4".getBytes(), "m1".getBytes(), "m2".getBytes(), "m3".getBytes(), "m4".getBytes());
+		connection.setCommands().sAdd("set4".getBytes(), "m1".getBytes(), "m2".getBytes(), "m3".getBytes(),
+				"m4".getBytes());
 
 		// Test sRandMember - get random member without removing
 		byte[] randMember = connection.setCommands().sRandMember("set4".getBytes());
@@ -226,4 +231,3 @@ class JedisClientSetCommandsIntegrationTests {
 		assertThat(results.get(4)).isEqualTo(1L); // sRem result
 	}
 }
-

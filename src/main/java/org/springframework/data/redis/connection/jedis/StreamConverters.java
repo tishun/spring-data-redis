@@ -130,8 +130,7 @@ class StreamConverters {
 	 */
 	static Map<byte[], StreamEntryID> toStreamOffsetsMap(StreamOffset<byte[]>[] streams) {
 		return Arrays.stream(streams)
-				.collect(Collectors.toMap(StreamOffset::getKey,
-						v -> toStreamEntryID(v.getOffset().getOffset())));
+				.collect(Collectors.toMap(StreamOffset::getKey, v -> toStreamEntryID(v.getOffset().getOffset())));
 	}
 
 	/**
@@ -195,8 +194,8 @@ class StreamConverters {
 	}
 
 	/**
-	 * Convert List of StreamEntryBinary objects to ByteRecords.
-	 * Uses reflection to access StreamEntryBinary fields since it's not a public API class.
+	 * Convert List of StreamEntryBinary objects to ByteRecords. Uses reflection to access StreamEntryBinary fields since
+	 * it's not a public API class.
 	 */
 	private static List<ByteRecord> convertStreamEntryBinaryList(byte[] key, List<?> entries) {
 		List<ByteRecord> result = new ArrayList<>(entries.size());
@@ -211,10 +210,7 @@ class StreamConverters {
 				java.lang.reflect.Method getFields = entryObj.getClass().getMethod("getFields");
 				Object id = getID.invoke(entryObj);
 				Map<byte[], byte[]> fields = (Map<byte[], byte[]>) getFields.invoke(entryObj);
-				result.add(StreamRecords.newRecord()
-						.in(key)
-						.withId(id.toString())
-						.ofBytes(fields));
+				result.add(StreamRecords.newRecord().in(key).withId(id.toString()).ofBytes(fields));
 			}
 		} catch (Exception e) {
 			throw new IllegalStateException("Failed to convert StreamEntryBinary to ByteRecord", e);
@@ -242,8 +238,8 @@ class StreamConverters {
 	}
 
 	/**
-	 * Convert cluster xreadGroupBinary result (List of KeyValue) to ByteRecords.
-	 * Cluster API returns List&lt;KeyValue&lt;byte[], List&lt;?&gt;&gt;&gt; where the list contains StreamEntryBinary objects.
+	 * Convert cluster xreadGroupBinary result (List of KeyValue) to ByteRecords. Cluster API returns
+	 * List&lt;KeyValue&lt;byte[], List&lt;?&gt;&gt;&gt; where the list contains StreamEntryBinary objects.
 	 * StreamEntryBinary is a Jedis internal class with getID() and getFields() methods.
 	 */
 	static List<ByteRecord> convertClusterToByteRecords(List<?> sources) {
@@ -265,10 +261,7 @@ class StreamConverters {
 					Object id = getID.invoke(entryObj);
 					Map<byte[], byte[]> fields = (Map<byte[], byte[]>) getFields.invoke(entryObj);
 
-					result.add(StreamRecords.newRecord()
-							.in(streamKey)
-							.withId(id.toString())
-							.ofBytes(fields));
+					result.add(StreamRecords.newRecord().in(streamKey).withId(id.toString()).ofBytes(fields));
 				} catch (Exception e) {
 					throw new IllegalStateException("Failed to convert cluster stream entry", e);
 				}
@@ -508,14 +501,13 @@ class StreamConverters {
 		return switch (result) {
 			case NOT_FOUND -> RedisStreamCommands.StreamEntryDeletionResult.NOT_FOUND;
 			case DELETED -> RedisStreamCommands.StreamEntryDeletionResult.DELETED;
-			case NOT_DELETED_UNACKNOWLEDGED_OR_STILL_REFERENCED ->
-					RedisStreamCommands.StreamEntryDeletionResult.NOT_DELETED_UNACKNOWLEDGED_OR_STILL_REFERENCED;
+			case NOT_DELETED_UNACKNOWLEDGED_OR_STILL_REFERENCED -> RedisStreamCommands.StreamEntryDeletionResult.NOT_DELETED_UNACKNOWLEDGED_OR_STILL_REFERENCED;
 		};
 	}
 
 	/**
-	 * Convert a list of Jedis {@link redis.clients.jedis.resps.StreamEntryDeletionResult} to a {@link List} of Spring Data Redis
-	 * {@link RedisStreamCommands.StreamEntryDeletionResult}.
+	 * Convert a list of Jedis {@link redis.clients.jedis.resps.StreamEntryDeletionResult} to a {@link List} of Spring
+	 * Data Redis {@link RedisStreamCommands.StreamEntryDeletionResult}.
 	 *
 	 * @param results the list of Jedis deletion result enums
 	 * @return the list of Spring Data Redis deletion result enums

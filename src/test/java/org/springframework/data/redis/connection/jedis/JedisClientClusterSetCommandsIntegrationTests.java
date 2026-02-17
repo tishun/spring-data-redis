@@ -34,8 +34,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Integration tests for {@link JedisClientSetCommands} in cluster mode.
- * Tests all methods in direct and pipelined modes (transactions not supported in cluster).
+ * Integration tests for {@link JedisClientSetCommands} in cluster mode. Tests all methods in direct and pipelined modes
+ * (transactions not supported in cluster).
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -49,8 +49,8 @@ class JedisClientClusterSetCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode(SettingsUtils.getHost(), SettingsUtils.getClusterPort());
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode(SettingsUtils.getHost(),
+				SettingsUtils.getClusterPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = factory.getClusterConnection();
@@ -71,7 +71,8 @@ class JedisClientClusterSetCommandsIntegrationTests {
 	@Test
 	void basicSetOperationsShouldWork() {
 		// Test sAdd - add members
-		Long sAddResult = connection.setCommands().sAdd("set1".getBytes(), "member1".getBytes(), "member2".getBytes(), "member3".getBytes());
+		Long sAddResult = connection.setCommands().sAdd("set1".getBytes(), "member1".getBytes(), "member2".getBytes(),
+				"member3".getBytes());
 		assertThat(sAddResult).isEqualTo(3L);
 
 		// Test sMembers - get all members
@@ -85,7 +86,8 @@ class JedisClientClusterSetCommandsIntegrationTests {
 		assertThat(sIsMemberResult2).isFalse();
 
 		// Test sMIsMember - check multiple memberships
-		List<Boolean> sMIsMemberResult = connection.setCommands().sMIsMember("set1".getBytes(), "member1".getBytes(), "nonexistent".getBytes());
+		List<Boolean> sMIsMemberResult = connection.setCommands().sMIsMember("set1".getBytes(), "member1".getBytes(),
+				"nonexistent".getBytes());
 		assertThat(sMIsMemberResult).containsExactly(true, false);
 
 		// Test sCard - get cardinality
@@ -110,7 +112,8 @@ class JedisClientClusterSetCommandsIntegrationTests {
 		assertThat(sInterResult).hasSize(2); // b, c
 
 		// Test sInterStore - intersection and store
-		Long sInterStoreResult = connection.setCommands().sInterStore("{tag}dest1".getBytes(), "{tag}set1".getBytes(), "{tag}set2".getBytes());
+		Long sInterStoreResult = connection.setCommands().sInterStore("{tag}dest1".getBytes(), "{tag}set1".getBytes(),
+				"{tag}set2".getBytes());
 		assertThat(sInterStoreResult).isEqualTo(2L);
 
 		// Test sUnion - union
@@ -118,7 +121,8 @@ class JedisClientClusterSetCommandsIntegrationTests {
 		assertThat(sUnionResult).hasSize(4); // a, b, c, d
 
 		// Test sUnionStore - union and store
-		Long sUnionStoreResult = connection.setCommands().sUnionStore("{tag}dest2".getBytes(), "{tag}set1".getBytes(), "{tag}set2".getBytes());
+		Long sUnionStoreResult = connection.setCommands().sUnionStore("{tag}dest2".getBytes(), "{tag}set1".getBytes(),
+				"{tag}set2".getBytes());
 		assertThat(sUnionStoreResult).isEqualTo(4L);
 
 		// Test sDiff - difference
@@ -126,7 +130,8 @@ class JedisClientClusterSetCommandsIntegrationTests {
 		assertThat(sDiffResult).hasSize(1); // a
 
 		// Test sDiffStore - difference and store
-		Long sDiffStoreResult = connection.setCommands().sDiffStore("{tag}dest3".getBytes(), "{tag}set1".getBytes(), "{tag}set2".getBytes());
+		Long sDiffStoreResult = connection.setCommands().sDiffStore("{tag}dest3".getBytes(), "{tag}set1".getBytes(),
+				"{tag}set2".getBytes());
 		assertThat(sDiffStoreResult).isEqualTo(1L);
 	}
 
@@ -137,7 +142,8 @@ class JedisClientClusterSetCommandsIntegrationTests {
 		connection.setCommands().sAdd("{tag}set2".getBytes(), "x".getBytes());
 
 		// Test sMove - move member between sets
-		Boolean sMoveResult = connection.setCommands().sMove("{tag}set1".getBytes(), "{tag}set2".getBytes(), "a".getBytes());
+		Boolean sMoveResult = connection.setCommands().sMove("{tag}set1".getBytes(), "{tag}set2".getBytes(),
+				"a".getBytes());
 		assertThat(sMoveResult).isTrue();
 		assertThat(connection.setCommands().sCard("{tag}set1".getBytes())).isEqualTo(2L);
 		assertThat(connection.setCommands().sCard("{tag}set2".getBytes())).isEqualTo(2L);
@@ -147,7 +153,8 @@ class JedisClientClusterSetCommandsIntegrationTests {
 		assertThat(sPopResult).isNotNull();
 
 		// Test sPop with count
-		connection.setCommands().sAdd("{tag}set3".getBytes(), "a".getBytes(), "b".getBytes(), "c".getBytes(), "d".getBytes());
+		connection.setCommands().sAdd("{tag}set3".getBytes(), "a".getBytes(), "b".getBytes(), "c".getBytes(),
+				"d".getBytes());
 		List<byte[]> sPopCountResult = connection.setCommands().sPop("{tag}set3".getBytes(), 2);
 		assertThat(sPopCountResult).hasSize(2);
 
@@ -180,4 +187,3 @@ class JedisClientClusterSetCommandsIntegrationTests {
 		assertThat(count).isEqualTo(20);
 	}
 }
-

@@ -40,8 +40,8 @@ import java.util.Collections;
 /**
  * Integration tests for {@link JedisClientClusterConnection}.
  * <p>
- * These tests verify that the cluster implementation works correctly with RedisClusterClient (Jedis 7.2+).
- * Tests cover basic operations, cluster-specific commands, and multi-key operations.
+ * These tests verify that the cluster implementation works correctly with RedisClusterClient (Jedis 7.2+). Tests cover
+ * basic operations, cluster-specific commands, and multi-key operations.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -298,8 +298,7 @@ public class JedisClientClusterConnectionIntegrationTests {
 		byte[] member = "location1".getBytes();
 
 		Long geoaddResult = connection.geoCommands().geoAdd(geoKey,
-			new RedisGeoCommands.GeoLocation<>(
-				member, new Point(13.361389, 38.115556)));
+				new RedisGeoCommands.GeoLocation<>(member, new Point(13.361389, 38.115556)));
 		assertThat(geoaddResult).isEqualTo(1L);
 
 		Distance distance = connection.geoCommands().geoDist(geoKey, member, member);
@@ -337,9 +336,7 @@ public class JedisClientClusterConnectionIntegrationTests {
 		byte[] field = "field1".getBytes();
 		byte[] value = "svalue1".getBytes();
 
-		RecordId recordId =
-			connection.streamCommands().xAdd(streamKey,
-				Collections.singletonMap(field, value));
+		RecordId recordId = connection.streamCommands().xAdd(streamKey, Collections.singletonMap(field, value));
 		assertThat(recordId).isNotNull();
 
 		Long xlenResult = connection.streamCommands().xLen(streamKey);
@@ -357,7 +354,7 @@ public class JedisClientClusterConnectionIntegrationTests {
 		byte[] script = "return 'hello'".getBytes();
 
 		byte[] result = connection.scriptingCommands().eval(script,
-			org.springframework.data.redis.connection.ReturnType.VALUE, 0);
+				org.springframework.data.redis.connection.ReturnType.VALUE, 0);
 		assertThat(new String(result)).isEqualTo("hello");
 	}
 
@@ -395,4 +392,3 @@ public class JedisClientClusterConnectionIntegrationTests {
 		assertThat(node.isMaster()).isTrue();
 	}
 }
-

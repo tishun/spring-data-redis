@@ -35,8 +35,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Integration tests for {@link JedisClientHashCommands} in cluster mode.
- * Tests all methods in direct and pipelined modes (transactions not supported in cluster).
+ * Integration tests for {@link JedisClientHashCommands} in cluster mode. Tests all methods in direct and pipelined
+ * modes (transactions not supported in cluster).
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -50,8 +50,8 @@ class JedisClientClusterHashCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode(SettingsUtils.getHost(), SettingsUtils.getClusterPort());
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode(SettingsUtils.getHost(),
+				SettingsUtils.getClusterPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = factory.getClusterConnection();
@@ -84,9 +84,11 @@ class JedisClientClusterHashCommandsIntegrationTests {
 		assertThat(hExistsResult).isTrue();
 
 		// Test hSetNX - set if field not exists
-		Boolean hSetNXResult = connection.hashCommands().hSetNX("hash1".getBytes(), "field2".getBytes(), "value2".getBytes());
+		Boolean hSetNXResult = connection.hashCommands().hSetNX("hash1".getBytes(), "field2".getBytes(),
+				"value2".getBytes());
 		assertThat(hSetNXResult).isTrue();
-		Boolean hSetNXResult2 = connection.hashCommands().hSetNX("hash1".getBytes(), "field2".getBytes(), "value3".getBytes());
+		Boolean hSetNXResult2 = connection.hashCommands().hSetNX("hash1".getBytes(), "field2".getBytes(),
+				"value3".getBytes());
 		assertThat(hSetNXResult2).isFalse();
 
 		// Test hDel - delete field
@@ -98,11 +100,8 @@ class JedisClientClusterHashCommandsIntegrationTests {
 	@Test
 	void multipleFieldOperationsShouldWork() {
 		// Test hMSet - set multiple fields
-		Map<byte[], byte[]> fields = Map.of(
-				"field1".getBytes(), "value1".getBytes(),
-				"field2".getBytes(), "value2".getBytes(),
-				"field3".getBytes(), "value3".getBytes()
-		);
+		Map<byte[], byte[]> fields = Map.of("field1".getBytes(), "value1".getBytes(), "field2".getBytes(),
+				"value2".getBytes(), "field3".getBytes(), "value3".getBytes());
 		connection.hashCommands().hMSet("hash2".getBytes(), fields);
 
 		// Test hLen - get number of fields
@@ -110,7 +109,8 @@ class JedisClientClusterHashCommandsIntegrationTests {
 		assertThat(hLenResult).isEqualTo(3L);
 
 		// Test hMGet - get multiple fields
-		List<byte[]> hMGetResult = connection.hashCommands().hMGet("hash2".getBytes(), "field1".getBytes(), "field2".getBytes());
+		List<byte[]> hMGetResult = connection.hashCommands().hMGet("hash2".getBytes(), "field1".getBytes(),
+				"field2".getBytes());
 		assertThat(hMGetResult).hasSize(2);
 		assertThat(hMGetResult.get(0)).isEqualTo("value1".getBytes());
 
@@ -179,11 +179,8 @@ class JedisClientClusterHashCommandsIntegrationTests {
 	@Test
 	void hashAdvancedOperationsShouldWork() {
 		// Set up hash
-		Map<byte[], byte[]> fields = Map.of(
-				"field1".getBytes(), "value1".getBytes(),
-				"field2".getBytes(), "value2".getBytes(),
-				"field3".getBytes(), "value3".getBytes()
-		);
+		Map<byte[], byte[]> fields = Map.of("field1".getBytes(), "value1".getBytes(), "field2".getBytes(),
+				"value2".getBytes(), "field3".getBytes(), "value3".getBytes());
 		connection.hashCommands().hMSet("hash5".getBytes(), fields);
 
 		// Test hRandField - get random field
@@ -195,7 +192,8 @@ class JedisClientClusterHashCommandsIntegrationTests {
 		assertThat(hRandFieldCountResult).hasSize(2);
 
 		// Test hRandFieldWithValues - get random field with values
-		List<Map.Entry<byte[], byte[]>> hRandFieldWithValuesResult = connection.hashCommands().hRandFieldWithValues("hash5".getBytes(), 2);
+		List<Map.Entry<byte[], byte[]>> hRandFieldWithValuesResult = connection.hashCommands()
+				.hRandFieldWithValues("hash5".getBytes(), 2);
 		assertThat(hRandFieldWithValuesResult).hasSize(2);
 
 		// Test hGetDel - get and delete field
@@ -205,15 +203,15 @@ class JedisClientClusterHashCommandsIntegrationTests {
 		assertThat(connection.hashCommands().hExists("hash5".getBytes(), "field1".getBytes())).isFalse();
 
 		// Test hGetEx - get field with expiration
-		List<byte[]> hGetExResult = connection.hashCommands().hGetEx("hash5".getBytes(), Expiration.seconds(100), "field2".getBytes());
+		List<byte[]> hGetExResult = connection.hashCommands().hGetEx("hash5".getBytes(), Expiration.seconds(100),
+				"field2".getBytes());
 		assertThat(hGetExResult).hasSize(1);
 		assertThat(hGetExResult.get(0)).isEqualTo("value2".getBytes());
 
 		// Test hSetEx - set field with expiration
 		Boolean hSetExResult = connection.hashCommands().hSetEx("hash5".getBytes(),
 				Map.of("field4".getBytes(), "value4".getBytes()),
-				org.springframework.data.redis.connection.RedisHashCommands.HashFieldSetOption.UPSERT,
-				Expiration.seconds(100));
+				org.springframework.data.redis.connection.RedisHashCommands.HashFieldSetOption.UPSERT, Expiration.seconds(100));
 		assertThat(hSetExResult).isTrue();
 
 		// Test hStrLen - get field value length
@@ -221,4 +219,3 @@ class JedisClientClusterHashCommandsIntegrationTests {
 		assertThat(hStrLenResult).isEqualTo(6L);
 	}
 }
-

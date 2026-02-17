@@ -191,7 +191,8 @@ class JedisClientClusterStringCommands implements RedisStringCommands {
 		}
 
 		try {
-			return Converters.stringToBoolean(connection.getClusterClient().setex(key, Long.valueOf(seconds).intValue(), value));
+			return Converters
+					.stringToBoolean(connection.getClusterClient().setex(key, Long.valueOf(seconds).intValue(), value));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -277,7 +278,6 @@ class JedisClientClusterStringCommands implements RedisStringCommands {
 			throw convertJedisAccessException(ex);
 		}
 	}
-
 
 	@Override
 	public Double incrBy(byte @NonNull [] key, double value) {
@@ -470,4 +470,3 @@ class JedisClientClusterStringCommands implements RedisStringCommands {
 	}
 
 }
-

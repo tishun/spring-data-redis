@@ -37,7 +37,7 @@ public abstract class ConnectionUtils {
 	}
 
 	public static boolean isJedis(RedisConnectionFactory connectionFactory) {
-		return connectionFactory instanceof JedisConnectionFactory ||
-				connectionFactory instanceof JedisClientConnectionFactory;
+		return connectionFactory instanceof JedisConnectionFactory
+				|| connectionFactory instanceof JedisClientConnectionFactory;
 	}
 }

@@ -35,8 +35,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Integration tests for {@link JedisClientZSetCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientZSetCommands}. Tests all methods in direct, transaction, and pipelined modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -50,8 +49,8 @@ class JedisClientZSetCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -77,12 +76,10 @@ class JedisClientZSetCommandsIntegrationTests {
 		assertThat(addResult).isTrue();
 
 		// Test zAdd with tuples - add multiple members
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("m2".getBytes(), 2.0),
-				Tuple.of("m3".getBytes(), 3.0),
-				Tuple.of("m4".getBytes(), 4.0)
-		);
-		Long addTuplesResult = connection.zSetCommands().zAdd("zset1".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
+		Set<Tuple> tuples = Set.of(Tuple.of("m2".getBytes(), 2.0), Tuple.of("m3".getBytes(), 3.0),
+				Tuple.of("m4".getBytes(), 4.0));
+		Long addTuplesResult = connection.zSetCommands().zAdd("zset1".getBytes(), tuples,
+				RedisZSetCommands.ZAddArgs.empty());
 		assertThat(addTuplesResult).isEqualTo(3L);
 
 		// Test zCard - get cardinality
@@ -102,11 +99,8 @@ class JedisClientZSetCommandsIntegrationTests {
 	@Test
 	void zSetScoreOperationsShouldWork() {
 		// Set up sorted set
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("alice".getBytes(), 100.0),
-				Tuple.of("bob".getBytes(), 200.0),
-				Tuple.of("charlie".getBytes(), 150.0)
-		);
+		Set<Tuple> tuples = Set.of(Tuple.of("alice".getBytes(), 100.0), Tuple.of("bob".getBytes(), 200.0),
+				Tuple.of("charlie".getBytes(), 150.0));
 		connection.zSetCommands().zAdd("scores".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Test zScore - get score of member
@@ -121,12 +115,8 @@ class JedisClientZSetCommandsIntegrationTests {
 	@Test
 	void zSetRankOperationsShouldWork() {
 		// Set up sorted set
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("alice".getBytes(), 100.0),
-				Tuple.of("bob".getBytes(), 200.0),
-				Tuple.of("charlie".getBytes(), 150.0),
-				Tuple.of("david".getBytes(), 175.0)
-		);
+		Set<Tuple> tuples = Set.of(Tuple.of("alice".getBytes(), 100.0), Tuple.of("bob".getBytes(), 200.0),
+				Tuple.of("charlie".getBytes(), 150.0), Tuple.of("david".getBytes(), 175.0));
 		connection.zSetCommands().zAdd("leaderboard".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Test zRank - get rank (0-based, ascending)
@@ -141,13 +131,8 @@ class JedisClientZSetCommandsIntegrationTests {
 	@Test
 	void zSetRangeOperationsShouldWork() {
 		// Set up sorted set
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("m1".getBytes(), 1.0),
-				Tuple.of("m2".getBytes(), 2.0),
-				Tuple.of("m3".getBytes(), 3.0),
-				Tuple.of("m4".getBytes(), 4.0),
-				Tuple.of("m5".getBytes(), 5.0)
-		);
+		Set<Tuple> tuples = Set.of(Tuple.of("m1".getBytes(), 1.0), Tuple.of("m2".getBytes(), 2.0),
+				Tuple.of("m3".getBytes(), 3.0), Tuple.of("m4".getBytes(), 4.0), Tuple.of("m5".getBytes(), 5.0));
 		connection.zSetCommands().zAdd("zset2".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Test zRange - get range by index
@@ -179,20 +164,16 @@ class JedisClientZSetCommandsIntegrationTests {
 		assertThat(revRangeByScore).hasSize(3);
 
 		// Test zRevRangeByScoreWithScores - get reverse range by score with scores
-		Set<Tuple> revRangeByScoreWithScores = connection.zSetCommands().zRevRangeByScoreWithScores("zset2".getBytes(), 2.0, 4.0);
+		Set<Tuple> revRangeByScoreWithScores = connection.zSetCommands().zRevRangeByScoreWithScores("zset2".getBytes(), 2.0,
+				4.0);
 		assertThat(revRangeByScoreWithScores).hasSize(3);
 	}
 
 	@Test
 	void zSetCountOperationsShouldWork() {
 		// Set up sorted set
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("a".getBytes(), 1.0),
-				Tuple.of("b".getBytes(), 2.0),
-				Tuple.of("c".getBytes(), 3.0),
-				Tuple.of("d".getBytes(), 4.0),
-				Tuple.of("e".getBytes(), 5.0)
-		);
+		Set<Tuple> tuples = Set.of(Tuple.of("a".getBytes(), 1.0), Tuple.of("b".getBytes(), 2.0),
+				Tuple.of("c".getBytes(), 3.0), Tuple.of("d".getBytes(), 4.0), Tuple.of("e".getBytes(), 5.0));
 		connection.zSetCommands().zAdd("zset3".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Test zCount - count members in score range
@@ -204,19 +185,16 @@ class JedisClientZSetCommandsIntegrationTests {
 		assertThat(countRangeResult).isEqualTo(3L);
 
 		// Test zLexCount - count members in lex range
-		Long lexCountResult = connection.zSetCommands().zLexCount("zset3".getBytes(), Range.closed("a".getBytes(), "c".getBytes()));
+		Long lexCountResult = connection.zSetCommands().zLexCount("zset3".getBytes(),
+				Range.closed("a".getBytes(), "c".getBytes()));
 		assertThat(lexCountResult).isGreaterThanOrEqualTo(0L);
 	}
 
 	@Test
 	void zSetRandomAndPopOperationsShouldWork() {
 		// Set up sorted set
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("m1".getBytes(), 1.0),
-				Tuple.of("m2".getBytes(), 2.0),
-				Tuple.of("m3".getBytes(), 3.0),
-				Tuple.of("m4".getBytes(), 4.0)
-		);
+		Set<Tuple> tuples = Set.of(Tuple.of("m1".getBytes(), 1.0), Tuple.of("m2".getBytes(), 2.0),
+				Tuple.of("m3".getBytes(), 3.0), Tuple.of("m4".getBytes(), 4.0));
 		connection.zSetCommands().zAdd("zset4".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Test zRandMember - get random member
@@ -260,16 +238,10 @@ class JedisClientZSetCommandsIntegrationTests {
 	@Test
 	void zSetSetOperationsShouldWork() {
 		// Set up sorted sets
-		Set<Tuple> tuples1 = Set.of(
-				Tuple.of("a".getBytes(), 1.0),
-				Tuple.of("b".getBytes(), 2.0),
-				Tuple.of("c".getBytes(), 3.0)
-		);
-		Set<Tuple> tuples2 = Set.of(
-				Tuple.of("b".getBytes(), 4.0),
-				Tuple.of("c".getBytes(), 5.0),
-				Tuple.of("d".getBytes(), 6.0)
-		);
+		Set<Tuple> tuples1 = Set.of(Tuple.of("a".getBytes(), 1.0), Tuple.of("b".getBytes(), 2.0),
+				Tuple.of("c".getBytes(), 3.0));
+		Set<Tuple> tuples2 = Set.of(Tuple.of("b".getBytes(), 4.0), Tuple.of("c".getBytes(), 5.0),
+				Tuple.of("d".getBytes(), 6.0));
 		connection.zSetCommands().zAdd("zset5".getBytes(), tuples1, RedisZSetCommands.ZAddArgs.empty());
 		connection.zSetCommands().zAdd("zset6".getBytes(), tuples2, RedisZSetCommands.ZAddArgs.empty());
 
@@ -278,12 +250,13 @@ class JedisClientZSetCommandsIntegrationTests {
 		assertThat(unionResult).hasSize(4); // a, b, c, d
 
 		// Test zUnionWithScores - union with scores
-		Set<Tuple> unionWithScores = connection.zSetCommands().zUnionWithScores(Aggregate.SUM, new int[]{1, 1},
+		Set<Tuple> unionWithScores = connection.zSetCommands().zUnionWithScores(Aggregate.SUM, new int[] { 1, 1 },
 				"zset5".getBytes(), "zset6".getBytes());
 		assertThat(unionWithScores).hasSize(4);
 
 		// Test zUnionStore - store union
-		Long unionStoreResult = connection.zSetCommands().zUnionStore("unionDst".getBytes(), "zset5".getBytes(), "zset6".getBytes());
+		Long unionStoreResult = connection.zSetCommands().zUnionStore("unionDst".getBytes(), "zset5".getBytes(),
+				"zset6".getBytes());
 		assertThat(unionStoreResult).isEqualTo(4L);
 
 		// Test zInter - intersection of sets
@@ -291,15 +264,14 @@ class JedisClientZSetCommandsIntegrationTests {
 		assertThat(interResult).hasSize(2); // b, c
 
 		// Test zInterWithScores - intersection with scores
-		Set<Tuple> interWithScores = connection.zSetCommands().zInterWithScores(Aggregate.SUM, new int[]{1, 1},
+		Set<Tuple> interWithScores = connection.zSetCommands().zInterWithScores(Aggregate.SUM, new int[] { 1, 1 },
 				"zset5".getBytes(), "zset6".getBytes());
 		assertThat(interWithScores).hasSize(2);
 
 		// Test zInterStore - store intersection
-		Long interStoreResult = connection.zSetCommands().zInterStore("interDst".getBytes(), "zset5".getBytes(), "zset6".getBytes());
+		Long interStoreResult = connection.zSetCommands().zInterStore("interDst".getBytes(), "zset5".getBytes(),
+				"zset6".getBytes());
 		assertThat(interStoreResult).isEqualTo(2L);
-
-
 
 		// Test zDiff - difference of sets
 		Set<byte[]> diffResult = connection.zSetCommands().zDiff("zset5".getBytes(), "zset6".getBytes());
@@ -310,20 +282,16 @@ class JedisClientZSetCommandsIntegrationTests {
 		assertThat(diffWithScores).hasSize(1);
 
 		// Test zDiffStore - store difference
-		Long diffStoreResult = connection.zSetCommands().zDiffStore("diffDst".getBytes(), "zset5".getBytes(), "zset6".getBytes());
+		Long diffStoreResult = connection.zSetCommands().zDiffStore("diffDst".getBytes(), "zset5".getBytes(),
+				"zset6".getBytes());
 		assertThat(diffStoreResult).isEqualTo(1L);
 	}
 
 	@Test
 	void zSetRemovalOperationsShouldWork() {
 		// Set up sorted set
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("a".getBytes(), 1.0),
-				Tuple.of("b".getBytes(), 2.0),
-				Tuple.of("c".getBytes(), 3.0),
-				Tuple.of("d".getBytes(), 4.0),
-				Tuple.of("e".getBytes(), 5.0)
-		);
+		Set<Tuple> tuples = Set.of(Tuple.of("a".getBytes(), 1.0), Tuple.of("b".getBytes(), 2.0),
+				Tuple.of("c".getBytes(), 3.0), Tuple.of("d".getBytes(), 4.0), Tuple.of("e".getBytes(), 5.0));
 		connection.zSetCommands().zAdd("zset7".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Test zRemRange - remove by rank range
@@ -340,17 +308,15 @@ class JedisClientZSetCommandsIntegrationTests {
 		connection.zSetCommands().zAdd("zset8".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Test zRemRangeByLex - remove by lex range
-		Long remLexResult = connection.zSetCommands().zRemRangeByLex("zset8".getBytes(), Range.closed("a".getBytes(), "c".getBytes()));
+		Long remLexResult = connection.zSetCommands().zRemRangeByLex("zset8".getBytes(),
+				Range.closed("a".getBytes(), "c".getBytes()));
 		assertThat(remLexResult).isGreaterThanOrEqualTo(0L);
 	}
 
 	@Test
 	void transactionShouldExecuteAtomically() {
 		// Set up initial state
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("m1".getBytes(), 1.0),
-				Tuple.of("m2".getBytes(), 2.0)
-		);
+		Set<Tuple> tuples = Set.of(Tuple.of("m1".getBytes(), 1.0), Tuple.of("m2".getBytes(), 2.0));
 		connection.zSetCommands().zAdd("txZset".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Execute multiple zset operations in a transaction
@@ -376,11 +342,8 @@ class JedisClientZSetCommandsIntegrationTests {
 	@Test
 	void pipelineShouldExecuteMultipleCommands() {
 		// Set up initial state
-		Set<Tuple> tuples = Set.of(
-				Tuple.of("m1".getBytes(), 1.0),
-				Tuple.of("m2".getBytes(), 2.0),
-				Tuple.of("m3".getBytes(), 3.0)
-		);
+		Set<Tuple> tuples = Set.of(Tuple.of("m1".getBytes(), 1.0), Tuple.of("m2".getBytes(), 2.0),
+				Tuple.of("m3".getBytes(), 3.0));
 		connection.zSetCommands().zAdd("pipeZset".getBytes(), tuples, RedisZSetCommands.ZAddArgs.empty());
 
 		// Execute multiple zset operations in pipeline
@@ -403,4 +366,3 @@ class JedisClientZSetCommandsIntegrationTests {
 		assertThat(results.get(4)).isEqualTo(1L); // zRem result
 	}
 }
-

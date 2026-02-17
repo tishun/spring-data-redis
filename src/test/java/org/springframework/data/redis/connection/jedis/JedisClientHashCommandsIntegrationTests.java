@@ -36,8 +36,7 @@ import org.springframework.data.redis.connection.RedisHashCommands;
 import org.springframework.data.redis.core.types.Expiration;
 
 /**
- * Integration tests for {@link JedisClientHashCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientHashCommands}. Tests all methods in direct, transaction, and pipelined modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -51,8 +50,8 @@ class JedisClientHashCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -85,7 +84,8 @@ class JedisClientHashCommandsIntegrationTests {
 		assertThat(exists).isTrue();
 
 		// Test hSetNX - set only if field doesn't exist
-		Boolean setNXResult = connection.hashCommands().hSetNX("hash1".getBytes(), "field1".getBytes(), "newvalue".getBytes());
+		Boolean setNXResult = connection.hashCommands().hSetNX("hash1".getBytes(), "field1".getBytes(),
+				"newvalue".getBytes());
 		assertThat(setNXResult).isFalse(); // Should fail as field exists
 		Boolean setNXNew = connection.hashCommands().hSetNX("hash1".getBytes(), "field2".getBytes(), "value2".getBytes());
 		assertThat(setNXNew).isTrue();
@@ -148,7 +148,8 @@ class JedisClientHashCommandsIntegrationTests {
 		connection.hashCommands().hSet("expHash".getBytes(), "field2".getBytes(), "value2".getBytes());
 
 		// Test hExpire - set expiration in seconds
-		List<Long> expireResult = connection.hashCommands().hExpire("expHash".getBytes(), 10, ExpirationOptions.Condition.ALWAYS, "field1".getBytes());
+		List<Long> expireResult = connection.hashCommands().hExpire("expHash".getBytes(), 10,
+				ExpirationOptions.Condition.ALWAYS, "field1".getBytes());
 		assertThat(expireResult).hasSize(1);
 
 		// Test hTtl - get TTL in seconds
@@ -157,7 +158,8 @@ class JedisClientHashCommandsIntegrationTests {
 		assertThat(ttlResult.get(0)).isGreaterThan(0L);
 
 		// Test hpExpire - set expiration in milliseconds
-		List<Long> pExpireResult = connection.hashCommands().hpExpire("expHash".getBytes(), 10000, ExpirationOptions.Condition.ALWAYS, "field2".getBytes());
+		List<Long> pExpireResult = connection.hashCommands().hpExpire("expHash".getBytes(), 10000,
+				ExpirationOptions.Condition.ALWAYS, "field2".getBytes());
 		assertThat(pExpireResult).hasSize(1);
 
 		// Test hpTtl - get TTL in milliseconds
@@ -190,7 +192,8 @@ class JedisClientHashCommandsIntegrationTests {
 		assertThat(randWithVal).isNotNull();
 
 		// Test hRandFieldWithValues with count
-		List<Map.Entry<byte[], byte[]>> randWithVals = connection.hashCommands().hRandFieldWithValues("advHash".getBytes(), 2);
+		List<Map.Entry<byte[], byte[]>> randWithVals = connection.hashCommands().hRandFieldWithValues("advHash".getBytes(),
+				2);
 		assertThat(randWithVals).hasSize(2);
 
 		// Test hGetDel - get and delete field
@@ -200,13 +203,15 @@ class JedisClientHashCommandsIntegrationTests {
 		assertThat(connection.hashCommands().hExists("advHash".getBytes(), "field1".getBytes())).isFalse();
 
 		// Test hGetEx - get with expiration update
-		List<byte[]> getExResult = connection.hashCommands().hGetEx("advHash".getBytes(), Expiration.seconds(10), "field2".getBytes());
+		List<byte[]> getExResult = connection.hashCommands().hGetEx("advHash".getBytes(), Expiration.seconds(10),
+				"field2".getBytes());
 		assertThat(getExResult).hasSize(1);
 		assertThat(getExResult.get(0)).isEqualTo("value2".getBytes());
 
 		// Test hSetEx - set with expiration
 		Map<byte[], byte[]> setExFields = Map.of("field4".getBytes(), "value4".getBytes());
-		Boolean setExResult = connection.hashCommands().hSetEx("advHash".getBytes(), setExFields, RedisHashCommands.HashFieldSetOption.UPSERT, Expiration.seconds(10));
+		Boolean setExResult = connection.hashCommands().hSetEx("advHash".getBytes(), setExFields,
+				RedisHashCommands.HashFieldSetOption.UPSERT, Expiration.seconds(10));
 		assertThat(setExResult).isTrue();
 
 		// Test hStrLen - get field value length
@@ -250,7 +255,8 @@ class JedisClientHashCommandsIntegrationTests {
 		connection.openPipeline();
 		connection.hashCommands().hIncrBy("pipeHash".getBytes(), "counter".getBytes(), 5);
 		connection.hashCommands().hSet("pipeHash".getBytes(), "field1".getBytes(), "value1".getBytes());
-		connection.hashCommands().hMSet("pipeHash".getBytes(), Map.of("field2".getBytes(), "value2".getBytes(), "field3".getBytes(), "value3".getBytes()));
+		connection.hashCommands().hMSet("pipeHash".getBytes(),
+				Map.of("field2".getBytes(), "value2".getBytes(), "field3".getBytes(), "value3".getBytes()));
 		connection.hashCommands().hLen("pipeHash".getBytes());
 		connection.hashCommands().hKeys("pipeHash".getBytes());
 		connection.hashCommands().hGet("pipeHash".getBytes(), "counter".getBytes());
@@ -268,6 +274,4 @@ class JedisClientHashCommandsIntegrationTests {
 		assertThat(results.get(4)).isEqualTo("15".getBytes()); // hGet counter
 	}
 
-
 }
-

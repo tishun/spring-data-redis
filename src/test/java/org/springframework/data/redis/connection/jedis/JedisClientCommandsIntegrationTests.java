@@ -30,14 +30,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.List;
 
 /**
- * Brief integration tests for all JedisClient*Commands classes.
- * Tests basic command execution and response parsing.
- *
- * <p>Note: Jedis throws {@link InvalidDataAccessApiUsageException} for script errors and command errors,
- * while Lettuce throws {@code RedisSystemException}. This is expected behavior based on
- * {@link JedisExceptionConverter} which converts all {@code JedisException} to
- * {@link InvalidDataAccessApiUsageException}. Tests that verify exception types are overridden
- * to expect the correct Jedis exceptions.
+ * Brief integration tests for all JedisClient*Commands classes. Tests basic command execution and response parsing.
+ * <p>
+ * Note: Jedis throws {@link InvalidDataAccessApiUsageException} for script errors and command errors, while Lettuce
+ * throws {@code RedisSystemException}. This is expected behavior based on {@link JedisExceptionConverter} which
+ * converts all {@code JedisException} to {@link InvalidDataAccessApiUsageException}. Tests that verify exception types
+ * are overridden to expect the correct Jedis exceptions.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -250,4 +248,3 @@ class JedisClientCommandsIntegrationTests extends AbstractConnectionIntegrationT
 		});
 	}
 }
-

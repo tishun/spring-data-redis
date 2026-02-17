@@ -34,8 +34,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Integration tests for {@link JedisClientServerCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientServerCommands}. Tests all methods in direct, transaction, and pipelined
+ * modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -49,8 +49,8 @@ class JedisClientServerCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -216,4 +216,3 @@ class JedisClientServerCommandsIntegrationTests {
 		assertThat(results.get(3)).isInstanceOf(Properties.class); // getConfig result
 	}
 }
-

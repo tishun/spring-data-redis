@@ -71,9 +71,7 @@ class JedisClientConnectionFactoryUnitTests {
 	@Test // GH-XXXX
 	void shouldCreateFactoryWithSentinelConfiguration() {
 
-		RedisSentinelConfiguration config = new RedisSentinelConfiguration()
-				.master("mymaster")
-				.sentinel("127.0.0.1", 26379)
+		RedisSentinelConfiguration config = new RedisSentinelConfiguration().master("mymaster").sentinel("127.0.0.1", 26379)
 				.sentinel("127.0.0.1", 26380);
 
 		connectionFactory = new JedisClientConnectionFactory(config);
@@ -86,10 +84,8 @@ class JedisClientConnectionFactoryUnitTests {
 	@Test // GH-XXXX
 	void shouldCreateFactoryWithClusterConfiguration() {
 
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode("127.0.0.1", 7000)
-				.clusterNode("127.0.0.1", 7001)
-				.clusterNode("127.0.0.1", 7002);
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode("127.0.0.1", 7000)
+				.clusterNode("127.0.0.1", 7001).clusterNode("127.0.0.1", 7002);
 
 		connectionFactory = new JedisClientConnectionFactory(config);
 
@@ -285,4 +281,3 @@ class JedisClientConnectionFactoryUnitTests {
 		assertThat(connectionFactory.isRunning()).isTrue();
 	}
 }
-

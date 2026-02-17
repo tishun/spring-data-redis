@@ -87,7 +87,8 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 		Assert.notNull(tuples, "Tuples must not be null");
 
 		try {
-			return connection.getClusterClient().zadd(key, JedisConverters.toTupleMap(tuples), JedisConverters.toZAddParams(args));
+			return connection.getClusterClient().zadd(key, JedisConverters.toTupleMap(tuples),
+					JedisConverters.toZAddParams(args));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -284,7 +285,8 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 	}
 
 	@Override
-	public Long zCount(byte @NonNull [] key, org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range) {
+	public Long zCount(byte @NonNull [] key,
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range cannot be null for ZCOUNT");
@@ -415,8 +417,8 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 
 	@Override
 	public Set<byte[]> zRangeByScore(byte @NonNull [] key,
-                                     org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
-                                     org.springframework.data.redis.connection.@NonNull Limit limit) {
+			org.springframework.data.domain.@NonNull Range<? extends @NonNull Number> range,
+			org.springframework.data.redis.connection.@NonNull Limit limit) {
 
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(range, "Range cannot be null for ZRANGEBYSCORE");
@@ -635,8 +637,8 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 		}
 
 		try {
-			return new LinkedHashSet<>(connection.getClusterClient().zrangeByScore(key, min, max, Long.valueOf(offset).intValue(),
-					Long.valueOf(count).intValue()));
+			return new LinkedHashSet<>(connection.getClusterClient().zrangeByScore(key, min, max,
+					Long.valueOf(offset).intValue(), Long.valueOf(count).intValue()));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -653,8 +655,8 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 		}
 
 		try {
-			return toTupleSet(connection.getClusterClient().zrangeByScoreWithScores(key, min, max, Long.valueOf(offset).intValue(),
-					Long.valueOf(count).intValue()));
+			return toTupleSet(connection.getClusterClient().zrangeByScoreWithScores(key, min, max,
+					Long.valueOf(offset).intValue(), Long.valueOf(count).intValue()));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}
@@ -919,8 +921,8 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 		if (ClusterSlotHashUtil.isSameSlotForAllKeys(sets)) {
 
 			try {
-				return JedisConverters.toSet(
-						JedisConverters.toTupleList(connection.getClusterClient().zinterWithScores(toZParams(aggregate, weights), sets)));
+				return JedisConverters.toSet(JedisConverters
+						.toTupleList(connection.getClusterClient().zinterWithScores(toZParams(aggregate, weights), sets)));
 			} catch (Exception ex) {
 				throw convertJedisAccessException(ex);
 			}
@@ -1022,8 +1024,8 @@ class JedisClientClusterZSetCommands implements RedisZSetCommands {
 		if (ClusterSlotHashUtil.isSameSlotForAllKeys(sets)) {
 
 			try {
-				return JedisConverters.toSet(
-						JedisConverters.toTupleList(connection.getClusterClient().zunionWithScores(toZParams(aggregate, weights), sets)));
+				return JedisConverters.toSet(JedisConverters
+						.toTupleList(connection.getClusterClient().zunionWithScores(toZParams(aggregate, weights), sets)));
 			} catch (Exception ex) {
 				throw convertJedisAccessException(ex);
 

@@ -47,9 +47,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.rpush(key, values),
-				pipeline -> pipeline.rpush(key, values));
+		return connection.execute(client -> client.rpush(key, values), pipeline -> pipeline.rpush(key, values));
 	}
 
 	@Override
@@ -65,18 +63,12 @@ class JedisClientListCommands implements RedisListCommands {
 		}
 
 		if (count != null) {
-			return connection.execute(
-					client -> client.lpos(key, element, params, count),
-					pipeline -> pipeline.lpos(key, element, params, count),
-					result -> result,
-					Collections::emptyList);
+			return connection.execute(client -> client.lpos(key, element, params, count),
+					pipeline -> pipeline.lpos(key, element, params, count), result -> result, Collections::emptyList);
 		}
 
-		return connection.execute(
-				client -> client.lpos(key, element, params),
-				pipeline -> pipeline.lpos(key, element, params),
-				Collections::singletonList,
-				Collections::emptyList);
+		return connection.execute(client -> client.lpos(key, element, params),
+				pipeline -> pipeline.lpos(key, element, params), Collections::singletonList, Collections::emptyList);
 	}
 
 	@Override
@@ -86,9 +78,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(values, "Values must not be null");
 		Assert.noNullElements(values, "Values must not contain null elements");
 
-		return connection.execute(
-				client -> client.lpush(key, values),
-				pipeline -> pipeline.lpush(key, values));
+		return connection.execute(client -> client.lpush(key, values), pipeline -> pipeline.lpush(key, values));
 	}
 
 	@Override
@@ -97,9 +87,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.rpushx(key, value),
-				pipeline -> pipeline.rpushx(key, value));
+		return connection.execute(client -> client.rpushx(key, value), pipeline -> pipeline.rpushx(key, value));
 	}
 
 	@Override
@@ -108,9 +96,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.lpushx(key, value),
-				pipeline -> pipeline.lpushx(key, value));
+		return connection.execute(client -> client.lpushx(key, value), pipeline -> pipeline.lpushx(key, value));
 	}
 
 	@Override
@@ -118,9 +104,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.llen(key),
-				pipeline -> pipeline.llen(key));
+		return connection.execute(client -> client.llen(key), pipeline -> pipeline.llen(key));
 	}
 
 	@Override
@@ -128,9 +112,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.lrange(key, start, end),
-				pipeline -> pipeline.lrange(key, start, end));
+		return connection.execute(client -> client.lrange(key, start, end), pipeline -> pipeline.lrange(key, start, end));
 	}
 
 	@Override
@@ -138,9 +120,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		connection.executeStatus(
-				client -> client.ltrim(key, start, end),
-				pipeline -> pipeline.ltrim(key, start, end));
+		connection.executeStatus(client -> client.ltrim(key, start, end), pipeline -> pipeline.ltrim(key, start, end));
 	}
 
 	@Override
@@ -148,9 +128,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.lindex(key, index),
-				pipeline -> pipeline.lindex(key, index));
+		return connection.execute(client -> client.lindex(key, index), pipeline -> pipeline.lindex(key, index));
 	}
 
 	@Override
@@ -158,8 +136,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.linsert(key, toListPosition(where), pivot, value),
+		return connection.execute(client -> client.linsert(key, toListPosition(where), pivot, value),
 				pipeline -> pipeline.linsert(key, toListPosition(where), pivot, value));
 	}
 
@@ -197,9 +174,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		connection.executeStatus(
-				client -> client.lset(key, index, value),
-				pipeline -> pipeline.lset(key, index, value));
+		connection.executeStatus(client -> client.lset(key, index, value), pipeline -> pipeline.lset(key, index, value));
 	}
 
 	@Override
@@ -208,9 +183,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.lrem(key, count, value),
-				pipeline -> pipeline.lrem(key, count, value));
+		return connection.execute(client -> client.lrem(key, count, value), pipeline -> pipeline.lrem(key, count, value));
 	}
 
 	@Override
@@ -218,9 +191,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.lpop(key),
-				pipeline -> pipeline.lpop(key));
+		return connection.execute(client -> client.lpop(key), pipeline -> pipeline.lpop(key));
 	}
 
 	@Override
@@ -228,9 +199,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.lpop(key, (int) count),
-				pipeline -> pipeline.lpop(key, (int) count));
+		return connection.execute(client -> client.lpop(key, (int) count), pipeline -> pipeline.lpop(key, (int) count));
 	}
 
 	@Override
@@ -238,9 +207,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.rpop(key),
-				pipeline -> pipeline.rpop(key));
+		return connection.execute(client -> client.rpop(key), pipeline -> pipeline.rpop(key));
 	}
 
 	@Override
@@ -248,9 +215,7 @@ class JedisClientListCommands implements RedisListCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.rpop(key, (int) count),
-				pipeline -> pipeline.rpop(key, (int) count));
+		return connection.execute(client -> client.rpop(key, (int) count), pipeline -> pipeline.rpop(key, (int) count));
 	}
 
 	@Override
@@ -259,9 +224,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(keys, "Key must not be null");
 		Assert.noNullElements(keys, "Keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.blpop(timeout, keys),
-				pipeline -> pipeline.blpop(timeout, keys));
+		return connection.execute(client -> client.blpop(timeout, keys), pipeline -> pipeline.blpop(timeout, keys));
 	}
 
 	@Override
@@ -270,9 +233,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(keys, "Key must not be null");
 		Assert.noNullElements(keys, "Keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.brpop(timeout, keys),
-				pipeline -> pipeline.brpop(timeout, keys));
+		return connection.execute(client -> client.brpop(timeout, keys), pipeline -> pipeline.brpop(timeout, keys));
 	}
 
 	@Override
@@ -281,8 +242,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(srcKey, "Source key must not be null");
 		Assert.notNull(dstKey, "Destination key must not be null");
 
-		return connection.execute(
-				client -> client.rpoplpush(srcKey, dstKey),
+		return connection.execute(client -> client.rpoplpush(srcKey, dstKey),
 				pipeline -> pipeline.rpoplpush(srcKey, dstKey));
 	}
 
@@ -292,8 +252,7 @@ class JedisClientListCommands implements RedisListCommands {
 		Assert.notNull(srcKey, "Source key must not be null");
 		Assert.notNull(dstKey, "Destination key must not be null");
 
-		return connection.execute(
-				client -> client.brpoplpush(srcKey, dstKey, timeout),
+		return connection.execute(client -> client.brpoplpush(srcKey, dstKey, timeout),
 				pipeline -> pipeline.brpoplpush(srcKey, dstKey, timeout));
 	}
 

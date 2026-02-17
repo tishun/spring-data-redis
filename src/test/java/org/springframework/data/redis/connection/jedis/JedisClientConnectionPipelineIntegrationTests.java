@@ -29,10 +29,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * Integration tests for {@link JedisClientConnection} pipeline functionality.
- *
- * <p>Note: Jedis throws {@link InvalidDataAccessApiUsageException} for script errors and command errors,
- * while Lettuce throws {@code RedisSystemException}. This is expected behavior based on
- * {@link JedisExceptionConverter}.
+ * <p>
+ * Note: Jedis throws {@link InvalidDataAccessApiUsageException} for script errors and command errors, while Lettuce
+ * throws {@code RedisSystemException}. This is expected behavior based on {@link JedisExceptionConverter}.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -98,50 +97,49 @@ public class JedisClientConnectionPipelineIntegrationTests extends AbstractConne
 	@Override
 	@Test
 	public void testExecWithoutMulti() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-				.isThrownBy(connection::exec).withMessage("No ongoing transaction; Did you forget to call multi");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(connection::exec)
+				.withMessage("No ongoing transaction; Did you forget to call multi");
 	}
 
 	@Override
 	@Test
 	public void testErrorInTx() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(connection::multi)
+				.withMessage("Cannot use Transaction while a pipeline is open");
 	}
 
 	@Override
 	@Test
 	public void testMultiExec() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(connection::multi)
+				.withMessage("Cannot use Transaction while a pipeline is open");
 	}
 
 	@Override
 	@Test
 	public void testMultiAlreadyInTx() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(connection::multi)
+				.withMessage("Cannot use Transaction while a pipeline is open");
 	}
 
 	@Override
 	@Test
 	public void testMultiDiscard() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(connection::multi)
+				.withMessage("Cannot use Transaction while a pipeline is open");
 	}
 
 	@Override
 	@Test
 	public void testWatch() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(connection::multi)
+				.withMessage("Cannot use Transaction while a pipeline is open");
 	}
 
 	@Override
 	@Test
 	public void testUnwatch() {
-		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-				.isThrownBy(connection::multi).withMessage("Cannot use Transaction while a pipeline is open");
+		assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(connection::multi)
+				.withMessage("Cannot use Transaction while a pipeline is open");
 	}
 }
-

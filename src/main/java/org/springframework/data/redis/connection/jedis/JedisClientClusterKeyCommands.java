@@ -170,18 +170,18 @@ class JedisClientClusterKeyCommands implements RedisKeyCommands {
 		Assert.notNull(node, "RedisClusterNode must not be null");
 		Assert.notNull(options, "Options must not be null");
 
-		return connection.getClusterCommandExecutor()
-				.executeCommandOnSingleNode((JedisClusterCommandCallback<Cursor<byte[]>>) client -> new ScanCursor<byte @NonNull []>(0, options) {
+		return connection.getClusterCommandExecutor().executeCommandOnSingleNode(
+				(JedisClusterCommandCallback<Cursor<byte[]>>) client -> new ScanCursor<byte @NonNull []>(0, options) {
 
-                    @Override
-                    protected ScanIteration<byte @NonNull []> doScan(@NonNull CursorId cursorId, @NonNull ScanOptions options) {
+					@Override
+					protected ScanIteration<byte @NonNull []> doScan(@NonNull CursorId cursorId, @NonNull ScanOptions options) {
 
-                        ScanParams params = JedisConverters.toScanParams(options);
-                        ScanResult<String> result = client.scan(cursorId.getCursorId(), params);
-                        return new ScanIteration<>(CursorId.of(result.getCursor()),
-                                JedisConverters.stringListToByteList().convert(result.getResult()));
-                    }
-                }.open(), node).getValue();
+						ScanParams params = JedisConverters.toScanParams(options);
+						ScanResult<String> result = client.scan(cursorId.getCursorId(), params);
+						return new ScanIteration<>(CursorId.of(result.getCursor()),
+								JedisConverters.stringListToByteList().convert(result.getResult()));
+					}
+				}.open(), node).getValue();
 	}
 
 	@Override
@@ -329,8 +329,8 @@ class JedisClientClusterKeyCommands implements RedisKeyCommands {
 				return JedisConverters.toBoolean(connection.getClusterClient().pexpireAt(key, unixTimeInMillis));
 			}
 
-			return JedisConverters
-					.toBoolean(connection.getClusterClient().pexpireAt(key, unixTimeInMillis, ExpiryOption.valueOf(condition.name())));
+			return JedisConverters.toBoolean(
+					connection.getClusterClient().pexpireAt(key, unixTimeInMillis, ExpiryOption.valueOf(condition.name())));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}

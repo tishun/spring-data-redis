@@ -90,16 +90,13 @@ class JedisClientConnectionFactoryIntegrationTests {
 
 		try (RedisConnection connection = factory.getConnection()) {
 
-			RedisClientInfo self = connection.serverCommands().getClientList()
-					.stream()
-					.filter(info -> "jedisClientLibName".equals(info.getName()))
-					.findFirst()
-					.orElseThrow();
+			RedisClientInfo self = connection.serverCommands().getClientList().stream()
+					.filter(info -> "jedisClientLibName".equals(info.getName())).findFirst().orElseThrow();
 
-			String expectedUpstreamDriver = "%s_v%s".formatted(RedisClientLibraryInfo.FRAMEWORK_NAME, RedisClientLibraryInfo.getVersion());
+			String expectedUpstreamDriver = "%s_v%s".formatted(RedisClientLibraryInfo.FRAMEWORK_NAME,
+					RedisClientLibraryInfo.getVersion());
 			assertThat(self.get("lib-name")).startsWith("jedis(" + expectedUpstreamDriver);
-		}
-		finally {
+		} finally {
 			factory.destroy();
 		}
 	}
@@ -142,13 +139,13 @@ class JedisClientConnectionFactoryIntegrationTests {
 	@Test
 	void shouldConnectWithPassword() {
 
-		RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 
-		ConnectionVerifier.create(new JedisClientConnectionFactory(standaloneConfiguration,
-				JedisClientConfiguration.defaultConfiguration())) //
-				.execute(connection -> assertThat(connection.ping()).isEqualTo("PONG"))
-				.verifyAndClose();
+		ConnectionVerifier
+				.create(
+						new JedisClientConnectionFactory(standaloneConfiguration, JedisClientConfiguration.defaultConfiguration())) //
+				.execute(connection -> assertThat(connection.ping()).isEqualTo("PONG")).verifyAndClose();
 	}
 
 	@Test // GH-XXXX
@@ -167,4 +164,3 @@ class JedisClientConnectionFactoryIntegrationTests {
 		factory.destroy();
 	}
 }
-

@@ -183,7 +183,8 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 
 	@Override
 	public Properties info(@NonNull RedisClusterNode node) {
-		return JedisConverters.toProperties(Objects.requireNonNull(executeCommandOnSingleNode(Jedis::info, node).getValue()));
+		return JedisConverters
+				.toProperties(Objects.requireNonNull(executeCommandOnSingleNode(Jedis::info, node).getValue()));
 	}
 
 	@Override
@@ -213,8 +214,7 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 		Assert.notNull(section, "Section must not be null");
 
 		return JedisConverters.toProperties(
-				Objects.requireNonNull(executeCommandOnSingleNode(client -> client.info(section), node).getValue())
-		);
+				Objects.requireNonNull(executeCommandOnSingleNode(client -> client.info(section), node).getValue()));
 	}
 
 	@Override
@@ -378,8 +378,8 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 	@Override
 	public List<@NonNull RedisClientInfo> getClientList(@NonNull RedisClusterNode node) {
 
-		return JedisConverters
-				.toListOfRedisClientInformation(Objects.requireNonNull(executeCommandOnSingleNode(Jedis::clientList, node).getValue()));
+		return JedisConverters.toListOfRedisClientInformation(
+				Objects.requireNonNull(executeCommandOnSingleNode(Jedis::clientList, node).getValue()));
 	}
 
 	@Override
@@ -424,7 +424,7 @@ class JedisClientClusterServerCommands implements RedisClusterServerCommands {
 	}
 
 	private <T> NodeResult<@NonNull T> executeCommandOnSingleNode(@NonNull JedisClusterCommandCallback<T> cmd,
-                                                                  @NonNull RedisClusterNode node) {
+			@NonNull RedisClusterNode node) {
 		return connection.getClusterCommandExecutor().executeCommandOnSingleNode(cmd, node);
 	}
 

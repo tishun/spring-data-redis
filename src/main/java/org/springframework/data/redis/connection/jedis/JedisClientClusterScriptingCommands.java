@@ -91,7 +91,8 @@ class JedisClientClusterScriptingCommands implements RedisScriptingCommands {
 		Assert.notNull(script, "Script must not be null");
 
 		try {
-			return (T) new JedisScriptReturnConverter(returnType).convert(connection.getClusterClient().eval(script, numKeys, keysAndArgs));
+			return (T) new JedisScriptReturnConverter(returnType)
+					.convert(connection.getClusterClient().eval(script, numKeys, keysAndArgs));
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}

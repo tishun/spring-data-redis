@@ -43,8 +43,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Integration tests for {@link JedisClientStreamCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientStreamCommands}. Tests all methods in direct, transaction, and pipelined
+ * modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -58,8 +58,8 @@ class JedisClientStreamCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -96,13 +96,13 @@ class JedisClientStreamCommandsIntegrationTests {
 		connection.streamCommands().xAdd(record2, XAddOptions.none());
 
 		// Test xRange - get range of entries
-		List<ByteRecord> rangeResult = connection.streamCommands().xRange("stream1".getBytes(),
-				Range.unbounded(), Limit.unlimited());
+		List<ByteRecord> rangeResult = connection.streamCommands().xRange("stream1".getBytes(), Range.unbounded(),
+				Limit.unlimited());
 		assertThat(rangeResult).hasSize(2);
 
 		// Test xRevRange - get reverse range
-		List<ByteRecord> revRangeResult = connection.streamCommands().xRevRange("stream1".getBytes(),
-				Range.unbounded(), Limit.unlimited());
+		List<ByteRecord> revRangeResult = connection.streamCommands().xRevRange("stream1".getBytes(), Range.unbounded(),
+				Limit.unlimited());
 		assertThat(revRangeResult).hasSize(2);
 
 		// Test xDel - delete entry
@@ -159,11 +159,13 @@ class JedisClientStreamCommandsIntegrationTests {
 		RecordId id2 = connection.streamCommands().xAdd(record, XAddOptions.none());
 
 		// Test xGroupCreate - create consumer group
-		String groupCreated = connection.streamCommands().xGroupCreate("stream4".getBytes(), "group1", ReadOffset.from("0-0"));
+		String groupCreated = connection.streamCommands().xGroupCreate("stream4".getBytes(), "group1",
+				ReadOffset.from("0-0"));
 		assertThat(groupCreated).isEqualTo("OK");
 
 		// Test xGroupCreate with mkstream flag
-		String groupCreatedMkstream = connection.streamCommands().xGroupCreate("stream5".getBytes(), "group2", ReadOffset.from("0-0"), true);
+		String groupCreatedMkstream = connection.streamCommands().xGroupCreate("stream5".getBytes(), "group2",
+				ReadOffset.from("0-0"), true);
 		assertThat(groupCreatedMkstream).isEqualTo("OK");
 
 		// Test xInfoGroups - get consumer group info
@@ -185,7 +187,8 @@ class JedisClientStreamCommandsIntegrationTests {
 
 		// Test xPending with options
 		XPendingOptions pendingOptions = XPendingOptions.unbounded();
-		PendingMessages pendingWithOptions = connection.streamCommands().xPending("stream4".getBytes(), "group1", pendingOptions);
+		PendingMessages pendingWithOptions = connection.streamCommands().xPending("stream4".getBytes(), "group1",
+				pendingOptions);
 		assertThat(pendingWithOptions).isNotNull();
 
 		// Test xGroupDelConsumer - delete consumer
@@ -207,13 +210,13 @@ class JedisClientStreamCommandsIntegrationTests {
 		connection.streamCommands().xGroupCreate("stream6".getBytes(), "group1", ReadOffset.from("0-0"));
 
 		// Test xClaim - claim pending message
-		List<ByteRecord> claimResult = connection.streamCommands().xClaim("stream6".getBytes(),
-				"group1", "consumer1", XClaimOptions.minIdleMs(0).ids(id));
+		List<ByteRecord> claimResult = connection.streamCommands().xClaim("stream6".getBytes(), "group1", "consumer1",
+				XClaimOptions.minIdleMs(0).ids(id));
 		assertThat(claimResult).isNotNull();
 
 		// Test xClaimJustId - claim and return just IDs
-		List<RecordId> claimJustIdResult = connection.streamCommands().xClaimJustId("stream6".getBytes(),
-				"group1", "consumer2", XClaimOptions.minIdleMs(0).ids(id));
+		List<RecordId> claimJustIdResult = connection.streamCommands().xClaimJustId("stream6".getBytes(), "group1",
+				"consumer2", XClaimOptions.minIdleMs(0).ids(id));
 		assertThat(claimJustIdResult).isNotNull();
 	}
 
@@ -227,14 +230,16 @@ class JedisClientStreamCommandsIntegrationTests {
 
 		// Test xDelEx - delete with options
 		XDelOptions delOptions = XDelOptions.defaults();
-		List<RedisStreamCommands.StreamEntryDeletionResult> delExResult = connection.streamCommands().xDelEx("stream7".getBytes(), delOptions, id);
+		List<RedisStreamCommands.StreamEntryDeletionResult> delExResult = connection.streamCommands()
+				.xDelEx("stream7".getBytes(), delOptions, id);
 		assertThat(delExResult).isNotNull();
 
 		// Add another entry for xAckDel test
 		RecordId id2 = connection.streamCommands().xAdd(record, XAddOptions.none());
 
 		// Test xAckDel - acknowledge and delete
-		List<RedisStreamCommands.StreamEntryDeletionResult> ackDelResult = connection.streamCommands().xAckDel("stream7".getBytes(), "group1", delOptions, id2);
+		List<RedisStreamCommands.StreamEntryDeletionResult> ackDelResult = connection.streamCommands()
+				.xAckDel("stream7".getBytes(), "group1", delOptions, id2);
 		assertThat(ackDelResult).isNotNull();
 	}
 
@@ -286,4 +291,3 @@ class JedisClientStreamCommandsIntegrationTests {
 		assertThat((Long) results.get(3)).isGreaterThanOrEqualTo(0L); // xTrim result
 	}
 }
-

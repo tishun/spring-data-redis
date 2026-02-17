@@ -15,8 +15,6 @@
  */
 package org.springframework.data.redis.connection.jedis;
 
-import static org.assertj.core.api.Assertions.*;
-
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -27,14 +25,16 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Connection;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Unit tests for SSL/TLS configuration in {@link JedisClientConnectionFactory}.
@@ -62,14 +62,10 @@ class JedisClientSslConfigurationUnitTests {
 		GenericObjectPoolConfig<Connection> poolConfig = new GenericObjectPoolConfig<>();
 
 		JedisClientConfiguration configuration = JedisClientConfiguration.builder().useSsl()
-				.hostnameVerifier(HttpsURLConnection.getDefaultHostnameVerifier())
-				.sslParameters(sslParameters)
-				.sslSocketFactory(socketFactory).and()
-				.clientName("my-client")
-				.connectTimeout(Duration.of(10, ChronoUnit.MINUTES))
-				.readTimeout(Duration.of(5, ChronoUnit.DAYS))
-				.usePooling().poolConfig(poolConfig)
-				.build();
+				.hostnameVerifier(HttpsURLConnection.getDefaultHostnameVerifier()).sslParameters(sslParameters)
+				.sslSocketFactory(socketFactory).and().clientName("my-client")
+				.connectTimeout(Duration.of(10, ChronoUnit.MINUTES)).readTimeout(Duration.of(5, ChronoUnit.DAYS)).usePooling()
+				.poolConfig(poolConfig).build();
 
 		factory = new JedisClientConnectionFactory(new RedisStandaloneConfiguration(), configuration);
 
@@ -87,15 +83,10 @@ class JedisClientSslConfigurationUnitTests {
 		SSLContext context = SSLContext.getDefault();
 		SSLSocketFactory socketFactory = context.getSocketFactory();
 
-		JedisClientConfiguration configuration = JedisClientConfiguration.builder()
-				.useSsl()
-				.sslSocketFactory(socketFactory)
-				.and()
-				.build();
+		JedisClientConfiguration configuration = JedisClientConfiguration.builder().useSsl().sslSocketFactory(socketFactory)
+				.and().build();
 
-		factory = new JedisClientConnectionFactory(
-				new RedisStandaloneConfiguration("localhost", 6380),
-				configuration);
+		factory = new JedisClientConnectionFactory(new RedisStandaloneConfiguration("localhost", 6380), configuration);
 
 		assertThat(factory.isUseSsl()).isTrue();
 		assertThat(factory.getClientConfiguration().getSslSocketFactory()).contains(socketFactory);
@@ -106,15 +97,10 @@ class JedisClientSslConfigurationUnitTests {
 
 		HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
 
-		JedisClientConfiguration configuration = JedisClientConfiguration.builder()
-				.useSsl()
-				.hostnameVerifier(hostnameVerifier)
-				.and()
-				.build();
+		JedisClientConfiguration configuration = JedisClientConfiguration.builder().useSsl()
+				.hostnameVerifier(hostnameVerifier).and().build();
 
-		factory = new JedisClientConnectionFactory(
-				new RedisStandaloneConfiguration("localhost", 6380),
-				configuration);
+		factory = new JedisClientConnectionFactory(new RedisStandaloneConfiguration("localhost", 6380), configuration);
 
 		assertThat(factory.isUseSsl()).isTrue();
 		assertThat(factory.getClientConfiguration().getHostnameVerifier()).contains(hostnameVerifier);
@@ -126,15 +112,10 @@ class JedisClientSslConfigurationUnitTests {
 		SSLParameters sslParameters = new SSLParameters();
 		sslParameters.setProtocols(new String[] { "TLSv1.2", "TLSv1.3" });
 
-		JedisClientConfiguration configuration = JedisClientConfiguration.builder()
-				.useSsl()
-				.sslParameters(sslParameters)
-				.and()
-				.build();
+		JedisClientConfiguration configuration = JedisClientConfiguration.builder().useSsl().sslParameters(sslParameters)
+				.and().build();
 
-		factory = new JedisClientConnectionFactory(
-				new RedisStandaloneConfiguration("localhost", 6380),
-				configuration);
+		factory = new JedisClientConnectionFactory(new RedisStandaloneConfiguration("localhost", 6380), configuration);
 
 		assertThat(factory.isUseSsl()).isTrue();
 		assertThat(factory.getClientConfiguration().getSslParameters()).contains(sslParameters);
@@ -146,14 +127,10 @@ class JedisClientSslConfigurationUnitTests {
 		SSLContext context = SSLContext.getDefault();
 		SSLSocketFactory socketFactory = context.getSocketFactory();
 
-		JedisClientConfiguration configuration = JedisClientConfiguration.builder()
-				.useSsl()
-				.sslSocketFactory(socketFactory)
-				.and()
-				.build();
+		JedisClientConfiguration configuration = JedisClientConfiguration.builder().useSsl().sslSocketFactory(socketFactory)
+				.and().build();
 
-		RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration()
-				.master("mymaster")
+		RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration().master("mymaster")
 				.sentinel("localhost", 26379);
 
 		factory = new JedisClientConnectionFactory(sentinelConfig, configuration);
@@ -169,14 +146,10 @@ class JedisClientSslConfigurationUnitTests {
 		SSLContext context = SSLContext.getDefault();
 		SSLSocketFactory socketFactory = context.getSocketFactory();
 
-		JedisClientConfiguration configuration = JedisClientConfiguration.builder()
-				.useSsl()
-				.sslSocketFactory(socketFactory)
-				.and()
-				.build();
+		JedisClientConfiguration configuration = JedisClientConfiguration.builder().useSsl().sslSocketFactory(socketFactory)
+				.and().build();
 
-		RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration()
-				.clusterNode("localhost", 7000)
+		RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration().clusterNode("localhost", 7000)
 				.clusterNode("localhost", 7001);
 
 		factory = new JedisClientConnectionFactory(clusterConfig, configuration);
@@ -197,17 +170,10 @@ class JedisClientSslConfigurationUnitTests {
 		SSLSocketFactory socketFactory = context.getSocketFactory();
 		HostnameVerifier hostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
 
-		JedisClientConfiguration configuration = JedisClientConfiguration.builder()
-				.useSsl()
-				.sslSocketFactory(socketFactory)
-				.sslParameters(sslParameters)
-				.hostnameVerifier(hostnameVerifier)
-				.and()
-				.build();
+		JedisClientConfiguration configuration = JedisClientConfiguration.builder().useSsl().sslSocketFactory(socketFactory)
+				.sslParameters(sslParameters).hostnameVerifier(hostnameVerifier).and().build();
 
-		factory = new JedisClientConnectionFactory(
-				new RedisStandaloneConfiguration("localhost", 6380),
-				configuration);
+		factory = new JedisClientConnectionFactory(new RedisStandaloneConfiguration("localhost", 6380), configuration);
 
 		assertThat(factory.isUseSsl()).isTrue();
 		assertThat(factory.getClientConfiguration().getSslSocketFactory()).contains(socketFactory);
@@ -218,8 +184,7 @@ class JedisClientSslConfigurationUnitTests {
 	@Test // GH-XXXX
 	void shouldNotUseSslByDefault() {
 
-		factory = new JedisClientConnectionFactory(
-				new RedisStandaloneConfiguration("localhost", 6379),
+		factory = new JedisClientConnectionFactory(new RedisStandaloneConfiguration("localhost", 6379),
 				JedisClientConfiguration.defaultConfiguration());
 
 		assertThat(factory.isUseSsl()).isFalse();
@@ -231,15 +196,10 @@ class JedisClientSslConfigurationUnitTests {
 	@Test // GH-XXXX
 	void shouldConfigureSslWithDeprecatedSetter() {
 
-		JedisClientConfiguration clientConfig = JedisClientConfiguration.builder()
-				.useSsl()
-				.build();
+		JedisClientConfiguration clientConfig = JedisClientConfiguration.builder().useSsl().build();
 
-		factory = new JedisClientConnectionFactory(
-				new RedisStandaloneConfiguration("localhost", 6380),
-				clientConfig);
+		factory = new JedisClientConnectionFactory(new RedisStandaloneConfiguration("localhost", 6380), clientConfig);
 
 		assertThat(factory.isUseSsl()).isTrue();
 	}
 }
-

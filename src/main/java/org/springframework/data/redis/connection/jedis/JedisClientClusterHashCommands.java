@@ -281,8 +281,8 @@ class JedisClientClusterHashCommands implements RedisHashCommands {
 
 				ScanParams params = JedisConverters.toScanParams(options);
 
-				ScanResult<Entry<byte[], byte[]>> result = connection.getClusterClient().hscan(key, JedisConverters.toBytes(cursorId),
-						params);
+				ScanResult<Entry<byte[], byte[]>> result = connection.getClusterClient().hscan(key,
+						JedisConverters.toBytes(cursorId), params);
 				return new ScanIteration<>(CursorId.of(result.getCursor()), result.getResult());
 			}
 		}.open();
@@ -353,7 +353,8 @@ class JedisClientClusterHashCommands implements RedisHashCommands {
 				return connection.getClusterClient().hpexpireAt(key, unixTimeInMillis, fields);
 			}
 
-			return connection.getClusterClient().hpexpireAt(key, unixTimeInMillis, ExpiryOption.valueOf(condition.name()), fields);
+			return connection.getClusterClient().hpexpireAt(key, unixTimeInMillis, ExpiryOption.valueOf(condition.name()),
+					fields);
 		} catch (Exception ex) {
 			throw convertJedisAccessException(ex);
 		}

@@ -48,9 +48,8 @@ import org.springframework.util.Assert;
 /**
  * {@link RedisClusterConnection} implementation using Jedis 7.2+ {@link RedisClusterClient} API.
  * <p>
- * This implementation uses the new {@link RedisClusterClient} class introduced in Jedis 7.2.0
- * for managing Redis Cluster operations. It follows the same pattern as {@link JedisClusterConnection}
- * but uses the new client API.
+ * This implementation uses the new {@link RedisClusterClient} class introduced in Jedis 7.2.0 for managing Redis
+ * Cluster operations. It follows the same pattern as {@link JedisClusterConnection} but uses the new client API.
  * <p>
  * This class is not Thread-safe and instances should not be shared across threads.
  *
@@ -106,8 +105,8 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 	}
 
 	/**
-	 * Create new {@link JedisClientClusterConnection} utilizing native connections via {@link RedisClusterClient}
-	 * running commands across the cluster via given {@link ClusterCommandExecutor}.
+	 * Create new {@link JedisClientClusterConnection} utilizing native connections via {@link RedisClusterClient} running
+	 * commands across the cluster via given {@link ClusterCommandExecutor}.
 	 *
 	 * @param clusterClient must not be {@literal null}.
 	 * @param executor must not be {@literal null}.
@@ -118,8 +117,8 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 	}
 
 	/**
-	 * Create new {@link JedisClientClusterConnection} utilizing native connections via {@link RedisClusterClient}
-	 * running commands across the cluster via given {@link ClusterCommandExecutor} and using the given
+	 * Create new {@link JedisClientClusterConnection} utilizing native connections via {@link RedisClusterClient} running
+	 * commands across the cluster via given {@link ClusterCommandExecutor} and using the given
 	 * {@link ClusterTopologyProvider}.
 	 *
 	 * @param clusterClient must not be {@literal null}.
@@ -316,7 +315,7 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 	}
 
 	@Override
-	public void watch(byte[] @NonNull ... keys) {
+	public void watch(byte[] @NonNull... keys) {
 		throw new InvalidDataAccessApiUsageException("WATCH is currently not supported in cluster mode");
 	}
 
@@ -689,7 +688,8 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 	 * @param <T>
 	 * @since 4.1
 	 */
-	protected interface JedisClientMultiKeyClusterCommandCallback<T> extends MultiKeyClusterCommandCallback<@NonNull Jedis, T> {}
+	protected interface JedisClientMultiKeyClusterCommandCallback<T>
+			extends MultiKeyClusterCommandCallback<@NonNull Jedis, T> {}
 
 	/**
 	 * Jedis specific implementation of {@link ClusterNodeResourceProvider}.
@@ -855,8 +855,8 @@ public class JedisClientClusterConnection implements RedisClusterConnection {
 		}
 
 		/**
-		 * Returns whether {@link #getTopology()} should return the cached {@link JedisClientClusterTopology}. Uses a time-based
-		 * caching.
+		 * Returns whether {@link #getTopology()} should return the cached {@link JedisClientClusterTopology}. Uses a
+		 * time-based caching.
 		 *
 		 * @return {@literal true} to use the cached {@link ClusterTopology}; {@literal false} to fetch a new cluster
 		 *         topology.

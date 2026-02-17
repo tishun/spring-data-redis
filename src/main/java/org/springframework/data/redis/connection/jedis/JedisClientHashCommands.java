@@ -70,9 +70,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(field, "Field must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.hset(key, field, value),
-				pipeline -> pipeline.hset(key, field, value),
+		return connection.execute(client -> client.hset(key, field, value), pipeline -> pipeline.hset(key, field, value),
 				longToBoolean());
 	}
 
@@ -83,10 +81,8 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(field, "Field must not be null");
 		Assert.notNull(value, "Value must not be null");
 
-		return connection.execute(
-				client -> client.hsetnx(key, field, value),
-				pipeline -> pipeline.hsetnx(key, field, value),
-				longToBoolean());
+		return connection.execute(client -> client.hsetnx(key, field, value),
+				pipeline -> pipeline.hsetnx(key, field, value), longToBoolean());
 	}
 
 	@Override
@@ -95,9 +91,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(fields, "Fields must not be null");
 
-		return connection.execute(
-				client -> client.hdel(key, fields),
-				pipeline -> pipeline.hdel(key, fields));
+		return connection.execute(client -> client.hdel(key, fields), pipeline -> pipeline.hdel(key, fields));
 	}
 
 	@Override
@@ -106,9 +100,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(field, "Fields must not be null");
 
-		return connection.execute(
-				client -> client.hexists(key, field),
-				pipeline -> pipeline.hexists(key, field));
+		return connection.execute(client -> client.hexists(key, field), pipeline -> pipeline.hexists(key, field));
 	}
 
 	@Override
@@ -117,9 +109,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(field, "Field must not be null");
 
-		return connection.execute(
-				client -> client.hget(key, field),
-				pipeline -> pipeline.hget(key, field));
+		return connection.execute(client -> client.hget(key, field), pipeline -> pipeline.hget(key, field));
 	}
 
 	@Override
@@ -127,9 +117,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.hgetAll(key),
-				pipeline -> pipeline.hgetAll(key));
+		return connection.execute(client -> client.hgetAll(key), pipeline -> pipeline.hgetAll(key));
 	}
 
 	@Override
@@ -137,9 +125,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.hrandfield(key),
-				pipeline -> pipeline.hrandfield(key));
+		return connection.execute(client -> client.hrandfield(key), pipeline -> pipeline.hrandfield(key));
 	}
 
 	@Nullable
@@ -148,10 +134,8 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.hrandfieldWithValues(key, 1L),
-				pipeline -> pipeline.hrandfieldWithValues(key, 1L),
-                result -> !result.isEmpty() ? result.get(0) : null);
+		return connection.execute(client -> client.hrandfieldWithValues(key, 1L),
+				pipeline -> pipeline.hrandfieldWithValues(key, 1L), result -> !result.isEmpty() ? result.get(0) : null);
 	}
 
 	@Nullable
@@ -160,9 +144,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.hrandfield(key, count),
-				pipeline -> pipeline.hrandfield(key, count));
+		return connection.execute(client -> client.hrandfield(key, count), pipeline -> pipeline.hrandfield(key, count));
 	}
 
 	@Nullable
@@ -172,8 +154,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		List<Entry<byte[], byte[]>> mapEntryList = connection.execute(
-				client -> client.hrandfieldWithValues(key, count),
+		List<Entry<byte[], byte[]>> mapEntryList = connection.execute(client -> client.hrandfieldWithValues(key, count),
 				pipeline -> pipeline.hrandfieldWithValues(key, count));
 
 		if (mapEntryList == null) {
@@ -191,8 +172,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(field, "Field must not be null");
 
-		return connection.execute(
-				client -> client.hincrBy(key, field, delta),
+		return connection.execute(client -> client.hincrBy(key, field, delta),
 				pipeline -> pipeline.hincrBy(key, field, delta));
 	}
 
@@ -202,8 +182,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(field, "Field must not be null");
 
-		return connection.execute(
-				client -> client.hincrByFloat(key, field, delta),
+		return connection.execute(client -> client.hincrByFloat(key, field, delta),
 				pipeline -> pipeline.hincrByFloat(key, field, delta));
 	}
 
@@ -212,9 +191,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.hkeys(key),
-				pipeline -> pipeline.hkeys(key));
+		return connection.execute(client -> client.hkeys(key), pipeline -> pipeline.hkeys(key));
 	}
 
 	@Override
@@ -222,9 +199,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.hlen(key),
-				pipeline -> pipeline.hlen(key));
+		return connection.execute(client -> client.hlen(key), pipeline -> pipeline.hlen(key));
 	}
 
 	@Override
@@ -233,9 +208,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(fields, "Fields must not be null");
 
-		return connection.execute(
-				client -> client.hmget(key, fields),
-				pipeline -> pipeline.hmget(key, fields));
+		return connection.execute(client -> client.hmget(key, fields), pipeline -> pipeline.hmget(key, fields));
 	}
 
 	@Override
@@ -244,9 +217,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(hashes, "Hashes must not be null");
 
-		connection.executeStatus(
-				client -> client.hmset(key, hashes),
-				pipeline -> pipeline.hmset(key, hashes));
+		connection.executeStatus(client -> client.hmset(key, hashes), pipeline -> pipeline.hmset(key, hashes));
 	}
 
 	@Override
@@ -254,9 +225,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.hvals(key),
-				pipeline -> pipeline.hvals(key));
+		return connection.execute(client -> client.hvals(key), pipeline -> pipeline.hvals(key));
 	}
 
 	@Override
@@ -273,7 +242,8 @@ class JedisClientHashCommands implements RedisHashCommands {
 		return new KeyBoundCursor<Entry<byte[], byte[]>>(key, cursorId, options) {
 
 			@Override
-			protected ScanIteration<Entry<byte[], byte[]>> doScan(byte @NonNull [] key, @NonNull CursorId cursorId, @NonNull ScanOptions options) {
+			protected ScanIteration<Entry<byte[], byte[]>> doScan(byte @NonNull [] key, @NonNull CursorId cursorId,
+					@NonNull ScanOptions options) {
 
 				if (isQueueing() || isPipelined()) {
 					throw new InvalidDataAccessApiUsageException("'HSCAN' cannot be called in pipeline / transaction mode");
@@ -281,8 +251,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 				ScanParams params = toScanParams(options);
 
-				ScanResult<Entry<byte[], byte[]>> result = connection.getJedis().hscan(key, toBytes(cursorId),
-						params);
+				ScanResult<Entry<byte[], byte[]>> result = connection.getJedis().hscan(key, toBytes(cursorId), params);
 				return new ScanIteration<>(of(result.getCursor()), result.getResult());
 			}
 
@@ -299,14 +268,12 @@ class JedisClientHashCommands implements RedisHashCommands {
 			byte @NonNull [] @NonNull... fields) {
 
 		if (condition == ALWAYS) {
-			return connection.execute(
-					client -> client.hexpire(key, seconds, fields),
+			return connection.execute(client -> client.hexpire(key, seconds, fields),
 					pipeline -> pipeline.hexpire(key, seconds, fields));
 		}
 
 		ExpiryOption option = valueOf(condition.name());
-		return connection.execute(
-				client -> client.hexpire(key, seconds, option, fields),
+		return connection.execute(client -> client.hexpire(key, seconds, option, fields),
 				pipeline -> pipeline.hexpire(key, seconds, option, fields));
 	}
 
@@ -315,14 +282,12 @@ class JedisClientHashCommands implements RedisHashCommands {
 			byte @NonNull [] @NonNull... fields) {
 
 		if (condition == ALWAYS) {
-			return connection.execute(
-					client -> client.hpexpire(key, millis, fields),
+			return connection.execute(client -> client.hpexpire(key, millis, fields),
 					pipeline -> pipeline.hpexpire(key, millis, fields));
 		}
 
 		ExpiryOption option = valueOf(condition.name());
-		return connection.execute(
-				client -> client.hpexpire(key, millis, option, fields),
+		return connection.execute(client -> client.hpexpire(key, millis, option, fields),
 				pipeline -> pipeline.hpexpire(key, millis, option, fields));
 	}
 
@@ -331,14 +296,12 @@ class JedisClientHashCommands implements RedisHashCommands {
 			ExpirationOptions.@NonNull Condition condition, byte @NonNull [] @NonNull... fields) {
 
 		if (condition == ALWAYS) {
-			return connection.execute(
-					client -> client.hexpireAt(key, unixTime, fields),
+			return connection.execute(client -> client.hexpireAt(key, unixTime, fields),
 					pipeline -> pipeline.hexpireAt(key, unixTime, fields));
 		}
 
 		ExpiryOption option = valueOf(condition.name());
-		return connection.execute(
-				client -> client.hexpireAt(key, unixTime, option, fields),
+		return connection.execute(client -> client.hexpireAt(key, unixTime, option, fields),
 				pipeline -> pipeline.hexpireAt(key, unixTime, option, fields));
 	}
 
@@ -347,37 +310,29 @@ class JedisClientHashCommands implements RedisHashCommands {
 			ExpirationOptions.@NonNull Condition condition, byte @NonNull [] @NonNull... fields) {
 
 		if (condition == ALWAYS) {
-			return connection.execute(
-					client -> client.hpexpireAt(key, unixTimeInMillis, fields),
+			return connection.execute(client -> client.hpexpireAt(key, unixTimeInMillis, fields),
 					pipeline -> pipeline.hpexpireAt(key, unixTimeInMillis, fields));
 		}
 
 		ExpiryOption option = valueOf(condition.name());
-		return connection.execute(
-				client -> client.hpexpireAt(key, unixTimeInMillis, option, fields),
+		return connection.execute(client -> client.hpexpireAt(key, unixTimeInMillis, option, fields),
 				pipeline -> pipeline.hpexpireAt(key, unixTimeInMillis, option, fields));
 	}
 
 	@Override
 	public List<@NonNull Long> hPersist(byte @NonNull [] key, byte @NonNull [] @NonNull... fields) {
-		return connection.execute(
-				client -> client.hpersist(key, fields),
-				pipeline -> pipeline.hpersist(key, fields));
+		return connection.execute(client -> client.hpersist(key, fields), pipeline -> pipeline.hpersist(key, fields));
 	}
 
 	@Override
 	public List<@NonNull Long> hTtl(byte @NonNull [] key, byte @NonNull [] @NonNull... fields) {
-		return connection.execute(
-				client -> client.httl(key, fields),
-				pipeline -> pipeline.httl(key, fields));
+		return connection.execute(client -> client.httl(key, fields), pipeline -> pipeline.httl(key, fields));
 	}
 
 	@Override
 	public List<@NonNull Long> hTtl(byte @NonNull [] key, @NonNull TimeUnit timeUnit,
 			byte @NonNull [] @NonNull... fields) {
-		List<Long> result = connection.execute(
-				client -> client.httl(key, fields),
-				pipeline -> pipeline.httl(key, fields));
+		List<Long> result = connection.execute(client -> client.httl(key, fields), pipeline -> pipeline.httl(key, fields));
 
 		if (result == null) {
 			return null;
@@ -392,9 +347,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 
 	@Override
 	public List<@NonNull Long> hpTtl(byte @NonNull [] key, byte @NonNull [] @NonNull... fields) {
-		return connection.execute(
-				client -> client.hpttl(key, fields),
-				pipeline -> pipeline.hpttl(key, fields));
+		return connection.execute(client -> client.hpttl(key, fields), pipeline -> pipeline.hpttl(key, fields));
 	}
 
 	@Override
@@ -403,9 +356,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(fields, "Fields must not be null");
 
-		return connection.execute(
-				client -> client.hgetdel(key, fields),
-				pipeline -> pipeline.hgetdel(key, fields));
+		return connection.execute(client -> client.hgetdel(key, fields), pipeline -> pipeline.hgetdel(key, fields));
 	}
 
 	@Override
@@ -415,8 +366,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(fields, "Fields must not be null");
 
-		return connection.execute(
-				client -> client.hgetex(key, toHGetExParams(expiration), fields),
+		return connection.execute(client -> client.hgetex(key, toHGetExParams(expiration), fields),
 				pipeline -> pipeline.hgetex(key, toHGetExParams(expiration), fields));
 	}
 
@@ -428,10 +378,8 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(hashes, "Hashes must not be null");
 		Assert.notNull(condition, "Condition must not be null");
 
-		return connection.execute(
-				client -> client.hsetex(key, toHSetExParams(condition, expiration), hashes),
-				pipeline -> pipeline.hsetex(key, toHSetExParams(condition, expiration), hashes),
-				Converters::toBoolean);
+		return connection.execute(client -> client.hsetex(key, toHSetExParams(condition, expiration), hashes),
+				pipeline -> pipeline.hsetex(key, toHSetExParams(condition, expiration), hashes), Converters::toBoolean);
 	}
 
 	@Nullable
@@ -441,9 +389,7 @@ class JedisClientHashCommands implements RedisHashCommands {
 		Assert.notNull(key, "Key must not be null");
 		Assert.notNull(field, "Field must not be null");
 
-		return connection.execute(
-				client -> client.hstrlen(key, field),
-				pipeline -> pipeline.hstrlen(key, field));
+		return connection.execute(client -> client.hstrlen(key, field), pipeline -> pipeline.hstrlen(key, field));
 	}
 
 	private boolean isPipelined() {

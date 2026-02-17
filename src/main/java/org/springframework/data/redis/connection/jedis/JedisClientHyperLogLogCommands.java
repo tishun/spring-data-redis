@@ -39,9 +39,7 @@ class JedisClientHyperLogLogCommands implements RedisHyperLogLogCommands {
 		Assert.notEmpty(values, "PFADD requires at least one non 'null' value");
 		Assert.noNullElements(values, "Values for PFADD must not contain 'null'");
 
-		return connection.execute(
-				client -> client.pfadd(key, values),
-				pipeline -> pipeline.pfadd(key, values));
+		return connection.execute(client -> client.pfadd(key, values), pipeline -> pipeline.pfadd(key, values));
 	}
 
 	@Override
@@ -50,9 +48,7 @@ class JedisClientHyperLogLogCommands implements RedisHyperLogLogCommands {
 		Assert.notEmpty(keys, "PFCOUNT requires at least one non 'null' key");
 		Assert.noNullElements(keys, "Keys for PFCOUNT must not contain 'null'");
 
-		return connection.execute(
-				client -> client.pfcount(keys),
-				pipeline -> pipeline.pfcount(keys));
+		return connection.execute(client -> client.pfcount(keys), pipeline -> pipeline.pfcount(keys));
 	}
 
 	@Override
@@ -62,8 +58,7 @@ class JedisClientHyperLogLogCommands implements RedisHyperLogLogCommands {
 		Assert.notNull(sourceKeys, "Source keys must not be null");
 		Assert.noNullElements(sourceKeys, "Keys for PFMERGE must not contain 'null'");
 
-		connection.execute(
-				client -> client.pfmerge(destinationKey, sourceKeys),
+		connection.execute(client -> client.pfmerge(destinationKey, sourceKeys),
 				pipeline -> pipeline.pfmerge(destinationKey, sourceKeys));
 	}
 

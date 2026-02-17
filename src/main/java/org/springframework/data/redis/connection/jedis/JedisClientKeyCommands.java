@@ -72,9 +72,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.exists(key),
-				pipeline -> pipeline.exists(key));
+		return connection.execute(client -> client.exists(key), pipeline -> pipeline.exists(key));
 	}
 
 	@Override
@@ -83,9 +81,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(keys, "Keys must not be null");
 		Assert.noNullElements(keys, "Keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.exists(keys),
-				pipeline -> pipeline.exists(keys));
+		return connection.execute(client -> client.exists(keys), pipeline -> pipeline.exists(keys));
 	}
 
 	@Override
@@ -94,9 +90,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(keys, "Keys must not be null");
 		Assert.noNullElements(keys, "Keys must not contain null elements");
 
-		return connection.execute(
-				client -> client.del(keys),
-				pipeline -> pipeline.del(keys));
+		return connection.execute(client -> client.del(keys), pipeline -> pipeline.del(keys));
 	}
 
 	@Override
@@ -105,8 +99,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(sourceKey, "source key must not be null");
 		Assert.notNull(targetKey, "target key must not be null");
 
-		return connection.execute(
-				client -> client.copy(sourceKey, targetKey, replace),
+		return connection.execute(client -> client.copy(sourceKey, targetKey, replace),
 				pipeline -> pipeline.copy(sourceKey, targetKey, replace));
 	}
 
@@ -115,9 +108,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(keys, "Keys must not be null");
 
-		return connection.execute(
-				client -> client.unlink(keys),
-				pipeline -> pipeline.unlink(keys));
+		return connection.execute(client -> client.unlink(keys), pipeline -> pipeline.unlink(keys));
 	}
 
 	@Override
@@ -125,9 +116,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.type(key),
-				pipeline -> pipeline.type(key),
+		return connection.execute(client -> client.type(key), pipeline -> pipeline.type(key),
 				JedisConverters.stringToDataType());
 	}
 
@@ -136,9 +125,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(keys, "Keys must not be null");
 
-		return connection.execute(
-				client -> client.touch(keys),
-				pipeline -> pipeline.touch(keys));
+		return connection.execute(client -> client.touch(keys), pipeline -> pipeline.touch(keys));
 	}
 
 	@Override
@@ -146,9 +133,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(pattern, "Pattern must not be null");
 
-		return connection.execute(
-				client -> client.keys(pattern),
-				pipeline -> pipeline.keys(pattern));
+		return connection.execute(client -> client.keys(pattern), pipeline -> pipeline.keys(pattern));
 	}
 
 	@Override
@@ -211,9 +196,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(oldKey, "Old key must not be null");
 		Assert.notNull(newKey, "New key must not be null");
 
-		connection.executeStatus(
-				client -> client.rename(oldKey, newKey),
-				pipeline -> pipeline.rename(oldKey, newKey));
+		connection.executeStatus(client -> client.rename(oldKey, newKey), pipeline -> pipeline.rename(oldKey, newKey));
 	}
 
 	@Override
@@ -222,10 +205,8 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(sourceKey, "Source key must not be null");
 		Assert.notNull(targetKey, "Target key must not be null");
 
-		return connection.execute(
-				client -> client.renamenx(sourceKey, targetKey),
-				pipeline -> pipeline.renamenx(sourceKey, targetKey),
-				longToBoolean());
+		return connection.execute(client -> client.renamenx(sourceKey, targetKey),
+				pipeline -> pipeline.renamenx(sourceKey, targetKey), longToBoolean());
 	}
 
 	@Override
@@ -238,17 +219,13 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		}
 
 		if (condition == ExpirationOptions.Condition.ALWAYS) {
-			return connection.execute(
-					client -> client.expire(key, seconds),
-					pipeline -> pipeline.expire(key, seconds),
+			return connection.execute(client -> client.expire(key, seconds), pipeline -> pipeline.expire(key, seconds),
 					longToBoolean());
 		}
 
 		ExpiryOption option = ExpiryOption.valueOf(condition.name());
-		return connection.execute(
-				client -> client.expire(key, seconds, option),
-				pipeline -> pipeline.expire(key, seconds, option),
-				longToBoolean());
+		return connection.execute(client -> client.expire(key, seconds, option),
+				pipeline -> pipeline.expire(key, seconds, option), longToBoolean());
 	}
 
 	@Override
@@ -257,17 +234,13 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(key, "Key must not be null");
 
 		if (condition == ExpirationOptions.Condition.ALWAYS) {
-			return connection.execute(
-					client -> client.pexpire(key, millis),
-					pipeline -> pipeline.pexpire(key, millis),
+			return connection.execute(client -> client.pexpire(key, millis), pipeline -> pipeline.pexpire(key, millis),
 					longToBoolean());
 		}
 
 		ExpiryOption option = ExpiryOption.valueOf(condition.name());
-		return connection.execute(
-				client -> client.pexpire(key, millis, option),
-				pipeline -> pipeline.pexpire(key, millis, option),
-				longToBoolean());
+		return connection.execute(client -> client.pexpire(key, millis, option),
+				pipeline -> pipeline.pexpire(key, millis, option), longToBoolean());
 	}
 
 	@Override
@@ -276,17 +249,13 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(key, "Key must not be null");
 
 		if (condition == ExpirationOptions.Condition.ALWAYS) {
-			return connection.execute(
-					client -> client.expireAt(key, unixTime),
-					pipeline -> pipeline.expireAt(key, unixTime),
+			return connection.execute(client -> client.expireAt(key, unixTime), pipeline -> pipeline.expireAt(key, unixTime),
 					longToBoolean());
 		}
 
 		ExpiryOption option = ExpiryOption.valueOf(condition.name());
-		return connection.execute(
-				client -> client.expireAt(key, unixTime, option),
-				pipeline -> pipeline.expireAt(key, unixTime, option),
-				longToBoolean());
+		return connection.execute(client -> client.expireAt(key, unixTime, option),
+				pipeline -> pipeline.expireAt(key, unixTime, option), longToBoolean());
 	}
 
 	@Override
@@ -296,17 +265,13 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		Assert.notNull(key, "Key must not be null");
 
 		if (condition == ExpirationOptions.Condition.ALWAYS) {
-			return connection.execute(
-					client -> client.pexpireAt(key, unixTimeInMillis),
-					pipeline -> pipeline.pexpireAt(key, unixTimeInMillis),
-					longToBoolean());
+			return connection.execute(client -> client.pexpireAt(key, unixTimeInMillis),
+					pipeline -> pipeline.pexpireAt(key, unixTimeInMillis), longToBoolean());
 		}
 
 		ExpiryOption option = ExpiryOption.valueOf(condition.name());
-		return connection.execute(
-				client -> client.pexpireAt(key, unixTimeInMillis, option),
-				pipeline -> pipeline.pexpireAt(key, unixTimeInMillis, option),
-				longToBoolean());
+		return connection.execute(client -> client.pexpireAt(key, unixTimeInMillis, option),
+				pipeline -> pipeline.pexpireAt(key, unixTimeInMillis, option), longToBoolean());
 	}
 
 	@Override
@@ -314,10 +279,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.persist(key),
-				pipeline -> pipeline.persist(key),
-				longToBoolean());
+		return connection.execute(client -> client.persist(key), pipeline -> pipeline.persist(key), longToBoolean());
 	}
 
 	@Override
@@ -325,8 +287,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute("MOVE", false, result -> toBoolean((Long) result), key,
-				toBytes(String.valueOf(dbIndex)));
+		return connection.execute("MOVE", false, result -> toBoolean((Long) result), key, toBytes(String.valueOf(dbIndex)));
 	}
 
 	@Override
@@ -334,9 +295,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.ttl(key),
-				pipeline -> pipeline.ttl(key));
+		return connection.execute(client -> client.ttl(key), pipeline -> pipeline.ttl(key));
 	}
 
 	@Override
@@ -344,10 +303,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.ttl(key),
-				pipeline -> pipeline.ttl(key),
-				secondsToTimeUnit(timeUnit));
+		return connection.execute(client -> client.ttl(key), pipeline -> pipeline.ttl(key), secondsToTimeUnit(timeUnit));
 	}
 
 	@Override
@@ -355,9 +311,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.pttl(key),
-				pipeline -> pipeline.pttl(key));
+		return connection.execute(client -> client.pttl(key), pipeline -> pipeline.pttl(key));
 	}
 
 	@Override
@@ -365,9 +319,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.pttl(key),
-				pipeline -> pipeline.pttl(key),
+		return connection.execute(client -> client.pttl(key), pipeline -> pipeline.pttl(key),
 				millisecondsToTimeUnit(timeUnit));
 	}
 
@@ -379,14 +331,10 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		SortingParams sortParams = toSortingParams(params);
 
 		if (sortParams != null) {
-			return connection.execute(
-					client -> client.sort(key, sortParams),
-					pipeline -> pipeline.sort(key, sortParams));
+			return connection.execute(client -> client.sort(key, sortParams), pipeline -> pipeline.sort(key, sortParams));
 		}
 
-		return connection.execute(
-				client -> client.sort(key),
-				pipeline -> pipeline.sort(key));
+		return connection.execute(client -> client.sort(key), pipeline -> pipeline.sort(key));
 	}
 
 	@Override
@@ -397,14 +345,11 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 		SortingParams sortParams = toSortingParams(params);
 
 		if (sortParams != null) {
-			return connection.execute(
-					client -> client.sort(key, sortParams, storeKey),
+			return connection.execute(client -> client.sort(key, sortParams, storeKey),
 					pipeline -> pipeline.sort(key, sortParams, storeKey));
 		}
 
-		return connection.execute(
-				client -> client.sort(key, storeKey),
-				pipeline -> pipeline.sort(key, storeKey));
+		return connection.execute(client -> client.sort(key, storeKey), pipeline -> pipeline.sort(key, storeKey));
 	}
 
 	@Override
@@ -412,9 +357,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.dump(key),
-				pipeline -> pipeline.dump(key));
+		return connection.execute(client -> client.dump(key), pipeline -> pipeline.dump(key));
 	}
 
 	@Override
@@ -435,8 +378,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 			throw new IllegalArgumentException("TtlInMillis must be less than Integer.MAX_VALUE for restore in Jedis");
 		}
 
-		connection.executeStatus(
-				client -> client.restore(key, (int) ttlInMillis, serializedValue),
+		connection.executeStatus(client -> client.restore(key, (int) ttlInMillis, serializedValue),
 				pipeline -> pipeline.restore(key, (int) ttlInMillis, serializedValue));
 	}
 
@@ -445,11 +387,8 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.objectEncoding(key),
-				pipeline -> pipeline.objectEncoding(key),
-				JedisConverters::toEncoding,
-				() -> RedisValueEncoding.VACANT);
+		return connection.execute(client -> client.objectEncoding(key), pipeline -> pipeline.objectEncoding(key),
+				JedisConverters::toEncoding, () -> RedisValueEncoding.VACANT);
 	}
 
 	@Override
@@ -457,9 +396,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.objectIdletime(key),
-				pipeline -> pipeline.objectIdletime(key),
+		return connection.execute(client -> client.objectIdletime(key), pipeline -> pipeline.objectIdletime(key),
 				Converters::secondsToDuration);
 	}
 
@@ -468,9 +405,7 @@ class JedisClientKeyCommands implements RedisKeyCommands {
 
 		Assert.notNull(key, "Key must not be null");
 
-		return connection.execute(
-				client -> client.objectRefcount(key),
-				pipeline -> pipeline.objectRefcount(key));
+		return connection.execute(client -> client.objectRefcount(key), pipeline -> pipeline.objectRefcount(key));
 	}
 
 	private boolean isPipelined() {

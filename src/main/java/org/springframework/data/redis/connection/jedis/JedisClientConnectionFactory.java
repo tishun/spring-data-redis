@@ -47,22 +47,24 @@ import static org.springframework.data.redis.connection.jedis.JedisConnectionFac
 /**
  * Connection factory creating connections based on the Jedis 7.2+ {@link RedisClient} API.
  * <p>
- * This factory uses the new {@link RedisClient} class introduced in Jedis 7.2.0, which provides
- * built-in connection pooling and improved resource management.
+ * This factory uses the new {@link RedisClient} class introduced in Jedis 7.2.0, which provides built-in connection
+ * pooling and improved resource management.
  * <p>
  * {@link JedisClientConnectionFactory} can be configured using:
  * <ul>
- *   <li>{@link RedisStandaloneConfiguration} for standalone Redis (fully supported)</li>
- *   <li>{@link RedisSentinelConfiguration} for Redis Sentinel (constructors available, connection implementation pending)</li>
- *   <li>{@link RedisClusterConfiguration} for Redis Cluster (constructors available, connection implementation pending)</li>
+ * <li>{@link RedisStandaloneConfiguration} for standalone Redis (fully supported)</li>
+ * <li>{@link RedisSentinelConfiguration} for Redis Sentinel (constructors available, connection implementation
+ * pending)</li>
+ * <li>{@link RedisClusterConfiguration} for Redis Cluster (constructors available, connection implementation
+ * pending)</li>
  * </ul>
  * <p>
- * This connection factory implements {@link InitializingBean} and {@link SmartLifecycle} for flexible
- * lifecycle control. It must be {@link #afterPropertiesSet() initialized} and {@link #start() started}
- * before you can obtain a connection.
+ * This connection factory implements {@link InitializingBean} and {@link SmartLifecycle} for flexible lifecycle
+ * control. It must be {@link #afterPropertiesSet() initialized} and {@link #start() started} before you can obtain a
+ * connection.
  * <p>
- * Note that {@link JedisClientConnection} and its {@link JedisClientClusterConnection clustered variant} are not Thread-safe and
- * instances should not be shared across threads. Refer to the
+ * Note that {@link JedisClientConnection} and its {@link JedisClientClusterConnection clustered variant} are not
+ * Thread-safe and instances should not be shared across threads. Refer to the
  * <a href="https://github.com/redis/jedis/wiki/Getting-started#using-jedis-in-a-multithreaded-environment">Jedis
  * documentation</a> for guidance on configuring Jedis in a multithreaded environment.
  *
@@ -139,8 +141,8 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
-	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
-	 * {@link RedisStandaloneConfiguration} and {@link JedisClientConfiguration}.
+	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given {@link RedisStandaloneConfiguration}
+	 * and {@link JedisClientConfiguration}.
 	 *
 	 * @param standaloneConfiguration must not be {@literal null}.
 	 * @param clientConfiguration must not be {@literal null}.
@@ -156,8 +158,7 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
-	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
-	 * {@link RedisSentinelConfiguration}.
+	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given {@link RedisSentinelConfiguration}.
 	 *
 	 * @param sentinelConfiguration must not be {@literal null}.
 	 */
@@ -166,8 +167,8 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
-	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
-	 * {@link RedisSentinelConfiguration} and {@link JedisClientConfiguration}.
+	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given {@link RedisSentinelConfiguration}
+	 * and {@link JedisClientConfiguration}.
 	 *
 	 * @param sentinelConfiguration must not be {@literal null}.
 	 * @param clientConfiguration must not be {@literal null}.
@@ -183,8 +184,7 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
-	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
-	 * {@link RedisClusterConfiguration}.
+	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given {@link RedisClusterConfiguration}.
 	 *
 	 * @param clusterConfiguration must not be {@literal null}.
 	 */
@@ -193,8 +193,8 @@ public class JedisClientConnectionFactory
 	}
 
 	/**
-	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given
-	 * {@link RedisClusterConfiguration} and {@link JedisClientConfiguration}.
+	 * Constructs a new {@link JedisClientConnectionFactory} instance using the given {@link RedisClusterConfiguration}
+	 * and {@link JedisClientConfiguration}.
 	 *
 	 * @param clusterConfiguration must not be {@literal null}.
 	 * @param clientConfiguration must not be {@literal null}.
@@ -262,8 +262,7 @@ public class JedisClientConnectionFactory
 	 * @return the {@link RedisSentinelConfiguration} or {@literal null} if not configured.
 	 */
 	public @Nullable RedisSentinelConfiguration getSentinelConfiguration() {
-		return RedisConfiguration.isSentinelConfiguration(configuration)
-				? (RedisSentinelConfiguration) configuration
+		return RedisConfiguration.isSentinelConfiguration(configuration) ? (RedisSentinelConfiguration) configuration
 				: null;
 	}
 
@@ -271,9 +270,7 @@ public class JedisClientConnectionFactory
 	 * @return the {@link RedisClusterConfiguration} or {@literal null} if not configured.
 	 */
 	public @Nullable RedisClusterConfiguration getClusterConfiguration() {
-		return RedisConfiguration.isClusterConfiguration(configuration)
-				? (RedisClusterConfiguration) configuration
-				: null;
+		return RedisConfiguration.isClusterConfiguration(configuration) ? (RedisClusterConfiguration) configuration : null;
 	}
 
 	/**
@@ -343,7 +340,8 @@ public class JedisClientConnectionFactory
 	 */
 	ClusterCommandExecutor getRequiredClusterCommandExecutor() {
 		if (clusterCommandExecutor == null) {
-			throw new IllegalStateException("ClusterCommandExecutor is not available. Ensure the factory is in cluster mode and has been started.");
+			throw new IllegalStateException(
+					"ClusterCommandExecutor is not available. Ensure the factory is in cluster mode and has been started.");
 		}
 		return clusterCommandExecutor;
 	}
@@ -429,8 +427,8 @@ public class JedisClientConnectionFactory
 		builder.connectionTimeoutMillis(getConnectTimeout());
 		builder.socketTimeoutMillis(getReadTimeout());
 
-		builder.clientSetInfoConfig(new ClientSetInfoConfig(DriverInfo.builder().addUpstreamDriver(
-				RedisClientLibraryInfo.FRAMEWORK_NAME, RedisClientLibraryInfo.getVersion()).build()));
+		builder.clientSetInfoConfig(new ClientSetInfoConfig(DriverInfo.builder()
+				.addUpstreamDriver(RedisClientLibraryInfo.FRAMEWORK_NAME, RedisClientLibraryInfo.getVersion()).build()));
 
 		builder.database(database);
 
@@ -506,9 +504,7 @@ public class JedisClientConnectionFactory
 	 * @return the {@link RedisClient} to use. Never {@literal null}.
 	 */
 	protected RedisClient createRedisClient() {
-		return RedisClient.builder()
-				.hostAndPort(getHostName(), getPort())
-				.clientConfig(this.clientConfig).build();
+		return RedisClient.builder().hostAndPort(getHostName(), getPort()).clientConfig(this.clientConfig).build();
 	}
 
 	/**
@@ -523,12 +519,9 @@ public class JedisClientConnectionFactory
 
 		JedisClientConfig sentinelConfig = createSentinelClientConfig(config);
 
-		return RedisSentinelClient.builder()
-				.masterName(config.getMaster() != null ? config.getMaster().getName() : null)
-				.sentinels(convertToJedisSentinelSet(config.getSentinels()))
-				.clientConfig(this.clientConfig)
-				.sentinelClientConfig(sentinelConfig)
-				.build();
+		return RedisSentinelClient.builder().masterName(config.getMaster() != null ? config.getMaster().getName() : null)
+				.sentinels(convertToJedisSentinelSet(config.getSentinels())).clientConfig(this.clientConfig)
+				.sentinelClientConfig(sentinelConfig).build();
 	}
 
 	/**
@@ -543,10 +536,7 @@ public class JedisClientConnectionFactory
 
 		Set<HostAndPort> nodes = convertToJedisClusterSet(config.getClusterNodes());
 
-		return RedisClusterClient.builder()
-				.nodes(nodes)
-				.clientConfig(this.clientConfig)
-				.build();
+		return RedisClusterClient.builder().nodes(nodes).clientConfig(this.clientConfig).build();
 	}
 
 	@Override
@@ -590,7 +580,7 @@ public class JedisClientConnectionFactory
 	public RedisConnection getConnection() {
 		assertInitialized();
 
-		if (isRedisClusterAware()){
+		if (isRedisClusterAware()) {
 			return getClusterConnection();
 		}
 
@@ -712,8 +702,8 @@ public class JedisClientConnectionFactory
 		switch (current) {
 			case CREATED, STOPPED -> throw new IllegalStateException(
 					"JedisClientConnectionFactory has been %s. Use start() to initialize it".formatted(current));
-			case DESTROYED ->
-				throw new IllegalStateException("JedisClientConnectionFactory was destroyed and cannot be used anymore");
+			case DESTROYED -> throw new IllegalStateException(
+					"JedisClientConnectionFactory was destroyed and cannot be used anymore");
 			default -> throw new IllegalStateException("JedisClientConnectionFactory is %s".formatted(current));
 		}
 	}
@@ -760,8 +750,8 @@ public class JedisClientConnectionFactory
 
 		Set<HostAndPort> convertedNodes = new LinkedHashSet<>(nodes.size());
 		for (RedisNode node : nodes) {
-            convertedNodes.add(JedisConverters.toHostAndPort(node));
-        }
+			convertedNodes.add(JedisConverters.toHostAndPort(node));
+		}
 		return convertedNodes;
 	}
 
@@ -779,8 +769,8 @@ public class JedisClientConnectionFactory
 
 		Set<HostAndPort> convertedNodes = new LinkedHashSet<>(nodes.size());
 		for (RedisNode node : nodes) {
-            convertedNodes.add(JedisConverters.toHostAndPort(node));
-        }
+			convertedNodes.add(JedisConverters.toHostAndPort(node));
+		}
 		return convertedNodes;
 	}
 
@@ -806,4 +796,3 @@ public class JedisClientConnectionFactory
 				EXCEPTION_TRANSLATION, this.executor);
 	}
 }
-

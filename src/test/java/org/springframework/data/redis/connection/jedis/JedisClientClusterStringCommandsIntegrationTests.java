@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Integration tests for {@link JedisClientStringCommands} in cluster mode.
- * Tests all methods in direct and pipelined modes (transactions not supported in cluster).
+ * Integration tests for {@link JedisClientStringCommands} in cluster mode. Tests all methods in direct and pipelined
+ * modes (transactions not supported in cluster).
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -51,8 +51,8 @@ class JedisClientClusterStringCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode(SettingsUtils.getHost(), SettingsUtils.getClusterPort());
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode(SettingsUtils.getHost(),
+				SettingsUtils.getClusterPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = factory.getClusterConnection();
@@ -97,24 +97,20 @@ class JedisClientClusterStringCommandsIntegrationTests {
 	@Test
 	void multipleKeyOperationsShouldWork() {
 		// Test mSet - set multiple keys
-		Map<byte[], byte[]> map = Map.of(
-				"{tag}key1".getBytes(), "value1".getBytes(),
-				"{tag}key2".getBytes(), "value2".getBytes(),
-				"{tag}key3".getBytes(), "value3".getBytes()
-		);
+		Map<byte[], byte[]> map = Map.of("{tag}key1".getBytes(), "value1".getBytes(), "{tag}key2".getBytes(),
+				"value2".getBytes(), "{tag}key3".getBytes(), "value3".getBytes());
 		Boolean mSetResult = connection.stringCommands().mSet(map);
 		assertThat(mSetResult).isTrue();
 
 		// Test mGet - get multiple keys
-		List<byte[]> mGetResult = connection.stringCommands().mGet("{tag}key1".getBytes(), "{tag}key2".getBytes(), "{tag}key3".getBytes());
+		List<byte[]> mGetResult = connection.stringCommands().mGet("{tag}key1".getBytes(), "{tag}key2".getBytes(),
+				"{tag}key3".getBytes());
 		assertThat(mGetResult).hasSize(3);
 		assertThat(mGetResult.get(0)).isEqualTo("value1".getBytes());
 
 		// Test mSetNX - set multiple keys if none exist
-		Map<byte[], byte[]> newMap = Map.of(
-				"{tag}key4".getBytes(), "value4".getBytes(),
-				"{tag}key5".getBytes(), "value5".getBytes()
-		);
+		Map<byte[], byte[]> newMap = Map.of("{tag}key4".getBytes(), "value4".getBytes(), "{tag}key5".getBytes(),
+				"value5".getBytes());
 		Boolean mSetNXResult = connection.stringCommands().mSetNX(newMap);
 		assertThat(mSetNXResult).isTrue();
 	}
@@ -136,13 +132,13 @@ class JedisClientClusterStringCommandsIntegrationTests {
 		assertThat(pSetExResult).isTrue();
 
 		// Test set with options
-		Boolean setWithOptionsResult = connection.stringCommands().set("key4".getBytes(), "value4".getBytes(), 
+		Boolean setWithOptionsResult = connection.stringCommands().set("key4".getBytes(), "value4".getBytes(),
 				Expiration.seconds(100), SetOption.ifAbsent());
 		assertThat(setWithOptionsResult).isTrue();
 
 		// Test setGet - set and return old value
-//		byte[] setGetResult = connection.stringCommands().setGet("key1".getBytes(), "newValue".getBytes());
-//		assertThat(setGetResult).isEqualTo("value1".getBytes());
+		// byte[] setGetResult = connection.stringCommands().setGet("key1".getBytes(), "newValue".getBytes());
+		// assertThat(setGetResult).isEqualTo("value1".getBytes());
 	}
 
 	@Test
@@ -208,10 +204,9 @@ class JedisClientClusterStringCommandsIntegrationTests {
 		assertThat(bitPosResult).isEqualTo(7L);
 
 		// Test bitField
-		BitFieldSubCommands commands = BitFieldSubCommands.create()
-				.get(BitFieldSubCommands.BitFieldType.unsigned(8)).valueAt(0L);
+		BitFieldSubCommands commands = BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(8))
+				.valueAt(0L);
 		List<Long> bitFieldResult = connection.stringCommands().bitField("bits".getBytes(), commands);
 		assertThat(bitFieldResult).isNotNull();
 	}
 }
-

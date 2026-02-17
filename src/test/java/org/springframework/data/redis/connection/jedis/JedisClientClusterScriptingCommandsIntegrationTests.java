@@ -32,8 +32,8 @@ import org.springframework.data.redis.test.extension.JedisExtension;
 import java.util.List;
 
 /**
- * Integration tests for {@link JedisClientScriptingCommands} in cluster mode.
- * Tests all methods in direct and pipelined modes (transactions not supported in cluster).
+ * Integration tests for {@link JedisClientScriptingCommands} in cluster mode. Tests all methods in direct and pipelined
+ * modes (transactions not supported in cluster).
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -47,8 +47,8 @@ class JedisClientClusterScriptingCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisClusterConfiguration config = new RedisClusterConfiguration()
-				.clusterNode(SettingsUtils.getHost(), SettingsUtils.getClusterPort());
+		RedisClusterConfiguration config = new RedisClusterConfiguration().clusterNode(SettingsUtils.getHost(),
+				SettingsUtils.getClusterPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = factory.getClusterConnection();
@@ -69,14 +69,14 @@ class JedisClientClusterScriptingCommandsIntegrationTests {
 	void scriptExecutionOperationsShouldWork() {
 		// Simple Lua script that returns a value
 		String script = "return 'Hello, Redis!'";
-		
+
 		// Test eval - execute script
 		Object evalResult = connection.scriptingCommands().eval(script.getBytes(), ReturnType.VALUE, 0);
 		assertThat(evalResult).isEqualTo("Hello, Redis!".getBytes());
 
 		// Script with keys and args
 		String scriptWithArgs = "return {KEYS[1], ARGV[1]}";
-		Object evalWithArgsResult = connection.scriptingCommands().eval(scriptWithArgs.getBytes(), ReturnType.MULTI, 1, 
+		Object evalWithArgsResult = connection.scriptingCommands().eval(scriptWithArgs.getBytes(), ReturnType.MULTI, 1,
 				"key1".getBytes(), "arg1".getBytes());
 		assertThat(evalWithArgsResult).isInstanceOf(List.class);
 
@@ -96,4 +96,3 @@ class JedisClientClusterScriptingCommandsIntegrationTests {
 		connection.scriptingCommands().scriptFlush();
 	}
 }
-

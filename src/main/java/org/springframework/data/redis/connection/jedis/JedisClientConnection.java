@@ -68,7 +68,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 	private final UnifiedJedis client;
 
-    private volatile @Nullable JedisSubscription subscription;
+	private volatile @Nullable JedisSubscription subscription;
 
 	private final JedisClientGeoCommands geoCommands = new JedisClientGeoCommands(this);
 	private final JedisClientHashCommands hashCommands = new JedisClientHashCommands(this);
@@ -113,7 +113,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		Assert.notNull(clientConfig, "JedisClientConfig must not be null");
 
 		this.client = client;
-    }
+	}
 
 	private static DefaultJedisClientConfig createConfig(int dbIndex, @Nullable String clientName) {
 		return DefaultJedisClientConfig.builder().database(dbIndex).clientName(clientName).build();
@@ -136,12 +136,11 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	}
 
 	/**
-	 * Execute a Redis command that returns a status response.
-	 * Status responses are handled specially and not included in transactional results.
+	 * Execute a Redis command that returns a status response. Status responses are handled specially and not included in
+	 * transactional results.
 	 * <p>
-	 * The {@code batchFunction} is used for both pipeline and transaction modes,
-	 * as both {@link AbstractPipeline} and {@link AbstractTransaction} extend
-	 * {@link PipeliningBase} and share the same command API.
+	 * The {@code batchFunction} is used for both pipeline and transaction modes, as both {@link AbstractPipeline} and
+	 * {@link AbstractTransaction} extend {@link PipeliningBase} and share the same command API.
 	 *
 	 * @param directFunction function to execute in direct mode on UnifiedJedis
 	 * @param batchFunction function to execute in pipeline or transaction mode on PipeliningBase
@@ -153,13 +152,11 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		return executionStrategy.executeStatus(directFunction, batchFunction);
 	}
 
-
 	/**
 	 * Execute a Redis command with a custom converter.
 	 * <p>
-	 * The {@code batchFunction} is used for both pipeline and transaction modes,
-	 * as both {@link AbstractPipeline} and {@link AbstractTransaction} extend
-	 * {@link PipeliningBase} and share the same command API.
+	 * The {@code batchFunction} is used for both pipeline and transaction modes, as both {@link AbstractPipeline} and
+	 * {@link AbstractTransaction} extend {@link PipeliningBase} and share the same command API.
 	 *
 	 * @param directFunction function to execute in direct mode on UnifiedJedis
 	 * @param batchFunction function to execute in pipeline or transaction mode on PipeliningBase
@@ -169,8 +166,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	 * @return the converted command result, or null in pipelined/transactional mode
 	 */
 	<S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
-			Function<PipeliningBase, Response<S>> batchFunction,
-			Converter<@NonNull S, T> converter) {
+			Function<PipeliningBase, Response<S>> batchFunction, Converter<@NonNull S, T> converter) {
 
 		return execute(directFunction, batchFunction, converter, () -> null);
 	}
@@ -178,9 +174,8 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	/**
 	 * Execute a Redis command with a custom converter and default value.
 	 * <p>
-	 * The {@code batchFunction} is used for both pipeline and transaction modes,
-	 * as both {@link AbstractPipeline} and {@link AbstractTransaction} extend
-	 * {@link PipeliningBase} and share the same command API.
+	 * The {@code batchFunction} is used for both pipeline and transaction modes, as both {@link AbstractPipeline} and
+	 * {@link AbstractTransaction} extend {@link PipeliningBase} and share the same command API.
 	 *
 	 * @param directFunction function to execute in direct mode on UnifiedJedis
 	 * @param batchFunction function to execute in pipeline or transaction mode on PipeliningBase
@@ -191,8 +186,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	 * @return the converted command result, or null in pipelined/transactional mode
 	 */
 	<S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
-			Function<PipeliningBase, Response<S>> batchFunction,
-			Converter<@NonNull S, T> converter,
+			Function<PipeliningBase, Response<S>> batchFunction, Converter<@NonNull S, T> converter,
 			Supplier<T> defaultValue) {
 		return executionStrategy.execute(directFunction, batchFunction, converter, defaultValue);
 	}
@@ -466,17 +460,13 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		Assert.notNull(message, "Message must not be null");
 
-		return execute(
-				client -> (byte[]) client.sendCommand(Protocol.Command.ECHO, message),
-				pipeline -> pipeline.sendCommand(Protocol.Command.ECHO, message),
-				result -> (byte[]) result);
+		return execute(client -> (byte[]) client.sendCommand(Protocol.Command.ECHO, message),
+				pipeline -> pipeline.sendCommand(Protocol.Command.ECHO, message), result -> (byte[]) result);
 	}
 
 	@Override
 	public String ping() {
-		return execute(
-				UnifiedJedis::ping,
-				pipeline -> pipeline.sendCommand(Protocol.Command.PING, new byte[0][]),
+		return execute(UnifiedJedis::ping, pipeline -> pipeline.sendCommand(Protocol.Command.PING, new byte[0][]),
 				result -> result instanceof byte[] ? JedisConverters.toString((byte[]) result) : (String) result);
 	}
 
@@ -530,8 +520,8 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	/**
 	 * Returns the underlying {@link UnifiedJedis} client instance.
 	 * <p>
-	 * This method is used by SCAN operations in command classes.
-	 * This can be a {@link RedisClient}, {@link RedisSentinelClient}, or other {@link UnifiedJedis} implementation.
+	 * This method is used by SCAN operations in command classes. This can be a {@link RedisClient},
+	 * {@link RedisSentinelClient}, or other {@link UnifiedJedis} implementation.
 	 *
 	 * @return the {@link UnifiedJedis} client. Never {@literal null}.
 	 */
@@ -540,15 +530,13 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		return this.client;
 	}
 
-
-
 	<T> JedisResult<@NonNull T, @NonNull T> newJedisResult(Response<T> response) {
-		return JedisResultBuilder.<T, T> forResponse(response)
-				.convertPipelineAndTxResults(convertPipelineAndTxResults)
+		return JedisResultBuilder.<T, T> forResponse(response).convertPipelineAndTxResults(convertPipelineAndTxResults)
 				.build();
 	}
 
-	<T, R> JedisResult<@NonNull T, @NonNull R> newJedisResult(Response<T> response, Converter<@NonNull T, R> converter, Supplier<R> defaultValue) {
+	<T, R> JedisResult<@NonNull T, @NonNull R> newJedisResult(Response<T> response, Converter<@NonNull T, R> converter,
+			Supplier<R> defaultValue) {
 
 		return JedisResultBuilder.<T, R> forResponse(response).mappedWith(converter)
 				.convertPipelineAndTxResults(convertPipelineAndTxResults).mapNullTo(defaultValue).build();
@@ -615,7 +603,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	}
 
 	@Override
-	public void subscribe(@NonNull MessageListener listener, byte @NonNull [] @NonNull ... channels) {
+	public void subscribe(@NonNull MessageListener listener, byte @NonNull [] @NonNull... channels) {
 
 		if (isSubscribed()) {
 			throw new InvalidDataAccessApiUsageException(
@@ -632,7 +620,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	}
 
 	@Override
-	public void pSubscribe(@NonNull MessageListener listener, byte @NonNull [] @NonNull ... patterns) {
+	public void pSubscribe(@NonNull MessageListener listener, byte @NonNull [] @NonNull... patterns) {
 
 		if (isSubscribed()) {
 			throw new InvalidDataAccessApiUsageException(
@@ -739,15 +727,14 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	 */
 	private interface ExecutionStrategy {
 		<T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
-								Function<PipeliningBase, Response<T>> batchFunction);
+				Function<PipeliningBase, Response<T>> batchFunction);
 
 		<T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
-									  Function<PipeliningBase, Response<T>> batchFunction);
+				Function<PipeliningBase, Response<T>> batchFunction);
 
 		<S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
-								   Function<PipeliningBase, Response<S>> batchFunction,
-								   Converter<@NonNull S, T> converter,
-								   Supplier<T> defaultValue);
+				Function<PipeliningBase, Response<S>> batchFunction, Converter<@NonNull S, T> converter,
+				Supplier<T> defaultValue);
 	}
 
 	/**
@@ -756,21 +743,20 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	private final class DirectExecutionStrategy implements ExecutionStrategy {
 		@Override
 		public <T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
-									   Function<PipeliningBase, Response<T>> batchFunction) {
+				Function<PipeliningBase, Response<T>> batchFunction) {
 			return doWithClient(directFunction);
 		}
 
 		@Override
 		public <T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
-											 Function<PipeliningBase, Response<T>> batchFunction) {
+				Function<PipeliningBase, Response<T>> batchFunction) {
 			return doWithClient(directFunction);
 		}
 
 		@Override
 		public <S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
-										  Function<PipeliningBase, Response<S>> batchFunction,
-										  Converter<@NonNull S, T> converter,
-										  Supplier<T> defaultValue) {
+				Function<PipeliningBase, Response<S>> batchFunction, Converter<@NonNull S, T> converter,
+				Supplier<T> defaultValue) {
 			return doWithClient(c -> {
 				S result = directFunction.apply(c);
 				return result != null ? converter.convert(result) : defaultValue.get();
@@ -784,7 +770,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	private final class PipelineExecutionStrategy implements ExecutionStrategy {
 		@Override
 		public <T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
-									   Function<PipeliningBase, Response<T>> batchFunction) {
+				Function<PipeliningBase, Response<T>> batchFunction) {
 			Response<T> response = batchFunction.apply(getRequiredPipeline());
 			pipeline(newJedisResult(response));
 			return null;
@@ -792,7 +778,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		@Override
 		public <T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
-											 Function<PipeliningBase, Response<T>> batchFunction) {
+				Function<PipeliningBase, Response<T>> batchFunction) {
 			Response<T> response = batchFunction.apply(getRequiredPipeline());
 			pipeline(newStatusResult(response));
 			return null;
@@ -800,9 +786,8 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		@Override
 		public <S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
-										  Function<PipeliningBase, Response<S>> batchFunction,
-										  Converter<@NonNull S, T> converter,
-										  Supplier<T> defaultValue) {
+				Function<PipeliningBase, Response<S>> batchFunction, Converter<@NonNull S, T> converter,
+				Supplier<T> defaultValue) {
 			Response<S> response = batchFunction.apply(getRequiredPipeline());
 			pipeline(newJedisResult(response, converter, defaultValue));
 			return null;
@@ -815,7 +800,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 	private final class TransactionExecutionStrategy implements ExecutionStrategy {
 		@Override
 		public <T> @Nullable T execute(Function<UnifiedJedis, T> directFunction,
-									   Function<PipeliningBase, Response<T>> batchFunction) {
+				Function<PipeliningBase, Response<T>> batchFunction) {
 			Response<T> response = batchFunction.apply(getRequiredTransaction());
 			transaction(newJedisResult(response));
 			return null;
@@ -823,7 +808,7 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		@Override
 		public <T> @Nullable T executeStatus(Function<UnifiedJedis, T> directFunction,
-											 Function<PipeliningBase, Response<T>> batchFunction) {
+				Function<PipeliningBase, Response<T>> batchFunction) {
 			Response<T> response = batchFunction.apply(getRequiredTransaction());
 			transaction(newStatusResult(response));
 			return null;
@@ -831,13 +816,11 @@ public class JedisClientConnection extends AbstractRedisConnection {
 
 		@Override
 		public <S, T> @Nullable T execute(Function<UnifiedJedis, S> directFunction,
-										  Function<PipeliningBase, Response<S>> batchFunction,
-										  Converter<@NonNull S, T> converter,
-										  Supplier<T> defaultValue) {
+				Function<PipeliningBase, Response<S>> batchFunction, Converter<@NonNull S, T> converter,
+				Supplier<T> defaultValue) {
 			Response<S> response = batchFunction.apply(getRequiredTransaction());
 			transaction(newJedisResult(response, converter, defaultValue));
 			return null;
 		}
 	}
 }
-

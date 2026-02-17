@@ -50,8 +50,6 @@ class JedisClientConnectionUnitTests {
 		assertThat(connection.isQueueing()).isFalse();
 	}
 
-
-
 	@Test // GH-XXXX
 	void shouldReturnClientFromGetter() {
 
@@ -67,12 +65,9 @@ class JedisClientConnectionUnitTests {
 		assertThat(connection).isNotNull();
 	}
 
-
-
 	@Test // GH-XXXX
 	void shouldReturnNativeConnectionFromGetter() {
 
 		assertThat(connection.getNativeConnection()).isEqualTo(clientMock);
 	}
 }
-

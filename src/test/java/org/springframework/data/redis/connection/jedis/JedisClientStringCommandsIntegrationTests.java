@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Integration tests for {@link JedisClientStringCommands}.
- * Tests all methods in direct, transaction, and pipelined modes.
+ * Integration tests for {@link JedisClientStringCommands}. Tests all methods in direct, transaction, and pipelined
+ * modes.
  *
  * @author Tihomir Mateev
  * @since 4.1
@@ -51,8 +51,8 @@ class JedisClientStringCommandsIntegrationTests {
 
 	@BeforeEach
 	void setUp() {
-		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 		factory = new JedisClientConnectionFactory(config);
 		factory.afterPropertiesSet();
 		connection = (JedisClientConnection) factory.getConnection();
@@ -137,8 +137,8 @@ class JedisClientStringCommandsIntegrationTests {
 		assertThat(pexResult).isTrue();
 
 		// Test set with expiration and option
-		Boolean setResult = connection.stringCommands().set("optkey".getBytes(), "value".getBytes(),
-				Expiration.seconds(10), RedisStringCommands.SetOption.UPSERT);
+		Boolean setResult = connection.stringCommands().set("optkey".getBytes(), "value".getBytes(), Expiration.seconds(10),
+				RedisStringCommands.SetOption.UPSERT);
 		assertThat(setResult).isTrue();
 
 		// Test setGet - set and return old value
@@ -217,8 +217,8 @@ class JedisClientStringCommandsIntegrationTests {
 		// Test bitOp - perform bitwise operations
 		connection.stringCommands().set("key1".getBytes(), "foo".getBytes());
 		connection.stringCommands().set("key2".getBytes(), "bar".getBytes());
-		Long opResult = connection.stringCommands().bitOp(RedisStringCommands.BitOperation.AND,
-				"dest".getBytes(), "key1".getBytes(), "key2".getBytes());
+		Long opResult = connection.stringCommands().bitOp(RedisStringCommands.BitOperation.AND, "dest".getBytes(),
+				"key1".getBytes(), "key2".getBytes());
 		assertThat(opResult).isGreaterThanOrEqualTo(0L);
 
 		// Test bitPos - find first bit set to 0 or 1
@@ -228,8 +228,8 @@ class JedisClientStringCommandsIntegrationTests {
 		assertThat(posResult).isGreaterThanOrEqualTo(0L);
 
 		// Test bitField - perform multiple bit operations
-		BitFieldSubCommands subCommands = BitFieldSubCommands.create()
-				.get(BitFieldSubCommands.BitFieldType.unsigned(4)).valueAt(0);
+		BitFieldSubCommands subCommands = BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(4))
+				.valueAt(0);
 		List<Long> fieldResult = connection.stringCommands().bitField("fieldkey".getBytes(), subCommands);
 		assertThat(fieldResult).isNotNull();
 	}
@@ -287,4 +287,3 @@ class JedisClientStringCommandsIntegrationTests {
 		assertThat(results.get(4)).isEqualTo("Hello World".getBytes()); // get pipe2
 	}
 }
-

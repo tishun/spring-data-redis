@@ -114,16 +114,16 @@ class JedisClientAclIntegrationTests {
 	@Test
 	void shouldConnectWithPasswordOnly() {
 
-		RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration(
-				SettingsUtils.getHost(), SettingsUtils.getPort());
+		RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration(SettingsUtils.getHost(),
+				SettingsUtils.getPort());
 
 		// No password set for default Redis instance
-		ConnectionVerifier.create(new JedisClientConnectionFactory(standaloneConfiguration,
-				JedisClientConfiguration.defaultConfiguration())) //
+		ConnectionVerifier
+				.create(
+						new JedisClientConnectionFactory(standaloneConfiguration, JedisClientConfiguration.defaultConfiguration())) //
 				.execute(connection -> {
 					assertThat(connection.ping()).isEqualTo("PONG");
 				}) //
 				.verifyAndClose();
 	}
 }
-
