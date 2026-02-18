@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -504,7 +505,14 @@ public class JedisClientConnectionFactory
 	 * @return the {@link RedisClient} to use. Never {@literal null}.
 	 */
 	protected RedisClient createRedisClient() {
-		return RedisClient.builder().hostAndPort(getHostName(), getPort()).clientConfig(this.clientConfig).build();
+		var builder = RedisClient.builder().hostAndPort(getHostName(), getPort()).clientConfig(this.clientConfig);
+
+		// Configure connection pool if pool configuration is provided
+		clientConfiguration.getPoolConfig().ifPresent(poolConfig -> {
+			builder.poolConfig(createConnectionPoolConfig(poolConfig));
+		});
+
+		return builder.build();
 	}
 
 	/**
@@ -519,9 +527,17 @@ public class JedisClientConnectionFactory
 
 		JedisClientConfig sentinelConfig = createSentinelClientConfig(config);
 
-		return RedisSentinelClient.builder().masterName(config.getMaster() != null ? config.getMaster().getName() : null)
+		var builder = RedisSentinelClient.builder()
+				.masterName(config.getMaster() != null ? config.getMaster().getName() : null)
 				.sentinels(convertToJedisSentinelSet(config.getSentinels())).clientConfig(this.clientConfig)
-				.sentinelClientConfig(sentinelConfig).build();
+				.sentinelClientConfig(sentinelConfig);
+
+		// Configure connection pool if pool configuration is provided
+		clientConfiguration.getPoolConfig().ifPresent(poolConfig -> {
+			builder.poolConfig(createConnectionPoolConfig(poolConfig));
+		});
+
+		return builder.build();
 	}
 
 	/**
@@ -536,7 +552,59 @@ public class JedisClientConnectionFactory
 
 		Set<HostAndPort> nodes = convertToJedisClusterSet(config.getClusterNodes());
 
-		return RedisClusterClient.builder().nodes(nodes).clientConfig(this.clientConfig).build();
+		var builder = RedisClusterClient.builder().nodes(nodes).clientConfig(this.clientConfig);
+
+		// Configure connection pool if pool configuration is provided
+		clientConfiguration.getPoolConfig().ifPresent(poolConfig -> {
+			builder.poolConfig(createConnectionPoolConfig(poolConfig));
+		});
+
+		return builder.build();
+	}
+
+	/**
+	 * Creates a {@link ConnectionPoolConfig} from the provided {@link GenericObjectPoolConfig}. Maps all available Apache
+	 * Commons Pool2 configuration options to Jedis ConnectionPoolConfig.
+	 *
+	 * @param poolConfig the pool configuration from Spring Data Redis
+	 * @return the Jedis ConnectionPoolConfig with all options applied
+	 */
+	private ConnectionPoolConfig createConnectionPoolConfig(GenericObjectPoolConfig poolConfig) {
+		ConnectionPoolConfig connectionPoolConfig = new ConnectionPoolConfig();
+
+		// Basic pool settings
+		connectionPoolConfig.setMaxTotal(poolConfig.getMaxTotal());
+		connectionPoolConfig.setMaxIdle(poolConfig.getMaxIdle());
+		connectionPoolConfig.setMinIdle(poolConfig.getMinIdle());
+		connectionPoolConfig.setBlockWhenExhausted(poolConfig.getBlockWhenExhausted());
+		connectionPoolConfig.setMaxWait(poolConfig.getMaxWaitDuration());
+
+		// Test settings
+		connectionPoolConfig.setTestOnBorrow(poolConfig.getTestOnBorrow());
+		connectionPoolConfig.setTestOnCreate(poolConfig.getTestOnCreate());
+		connectionPoolConfig.setTestOnReturn(poolConfig.getTestOnReturn());
+		connectionPoolConfig.setTestWhileIdle(poolConfig.getTestWhileIdle());
+
+		// Eviction settings
+		connectionPoolConfig.setTimeBetweenEvictionRuns(poolConfig.getDurationBetweenEvictionRuns());
+		connectionPoolConfig.setNumTestsPerEvictionRun(poolConfig.getNumTestsPerEvictionRun());
+		connectionPoolConfig.setMinEvictableIdleTime(poolConfig.getMinEvictableIdleDuration());
+		connectionPoolConfig.setSoftMinEvictableIdleTime(poolConfig.getSoftMinEvictableIdleDuration());
+
+		// Ordering and fairness
+		connectionPoolConfig.setLifo(poolConfig.getLifo());
+		connectionPoolConfig.setFairness(poolConfig.getFairness());
+
+		// JMX and monitoring
+		connectionPoolConfig.setJmxEnabled(poolConfig.getJmxEnabled());
+		connectionPoolConfig.setJmxNamePrefix(poolConfig.getJmxNamePrefix());
+		connectionPoolConfig.setJmxNameBase(poolConfig.getJmxNameBase());
+
+		// Advanced settings
+		connectionPoolConfig.setEvictionPolicyClassName(poolConfig.getEvictionPolicyClassName());
+		connectionPoolConfig.setEvictorShutdownTimeout(poolConfig.getEvictorShutdownTimeoutDuration());
+
+		return connectionPoolConfig;
 	}
 
 	@Override
@@ -585,7 +653,7 @@ public class JedisClientConnectionFactory
 		}
 
 		JedisClientConfig config = this.clientConfig;
-		redis.clients.jedis.UnifiedJedis client;
+		UnifiedJedis client;
 
 		if (isRedisSentinelAware()) {
 			SentinelConfiguration sentinelConfiguration = getSentinelConfiguration();

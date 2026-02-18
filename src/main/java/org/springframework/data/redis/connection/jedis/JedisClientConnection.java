@@ -113,6 +113,11 @@ public class JedisClientConnection extends AbstractRedisConnection {
 		Assert.notNull(clientConfig, "JedisClientConfig must not be null");
 
 		this.client = client;
+
+		// Select the configured database to ensure clean state
+		// This matches the behavior of the legacy JedisConnection which always selects the database in the constructor
+		// to ensure connections from the pool start with the expected database, regardless of what previous operations did
+		select(clientConfig.getDatabase());
 	}
 
 	private static DefaultJedisClientConfig createConfig(int dbIndex, @Nullable String clientName) {
