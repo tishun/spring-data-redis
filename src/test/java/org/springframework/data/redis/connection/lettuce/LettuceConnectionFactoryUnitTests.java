@@ -55,11 +55,13 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.data.redis.ConnectionFactoryTracker;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.connection.MultiDbNode;
 import org.springframework.data.redis.connection.PoolException;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisClusterConnection;
 import org.springframework.data.redis.connection.RedisConfiguration;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisMultiDbConfiguration;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
@@ -1361,5 +1363,69 @@ class LettuceConnectionFactoryUnitTests {
 
 			return "CustomRedisConfiguration{" + "hostName='" + hostName + '\'' + ", port=" + port + '}';
 		}
+	}
+
+	private static RedisMultiDbConfiguration multiDbConfiguration() {
+		return RedisMultiDbConfiguration.descending() //
+				.node(MultiDbNode.host("127.0.0.1", 6379)) //
+				.node(MultiDbNode.host("127.0.0.1", 6380));
+	}
+
+	@Test // GH-3253
+	void shouldRecognizeMultiDbConfiguration() {
+
+		RedisMultiDbConfiguration configuration = multiDbConfiguration();
+
+		LettuceConnectionFactory factory = new LettuceConnectionFactory(configuration,
+				LettuceTestClientConfiguration.defaultConfiguration());
+
+		assertThat(factory.isMultiDbAware()).isTrue();
+		assertThat(factory.getMultiDbConfiguration()).isSameAs(configuration);
+	}
+
+	@Test // GH-3253
+	void shouldReturnNullMultiDbConfigurationForStandalone() {
+
+		LettuceConnectionFactory factory = new LettuceConnectionFactory(new RedisStandaloneConfiguration(),
+				LettuceTestClientConfiguration.defaultConfiguration());
+
+		assertThat(factory.isMultiDbAware()).isFalse();
+		assertThat(factory.getMultiDbConfiguration()).isNull();
+	}
+
+	@Test // GH-3253
+	void getMultiDbClientShouldThrowBeforeStart() {
+
+		LettuceConnectionFactory factory = new LettuceConnectionFactory(multiDbConfiguration(),
+				LettuceTestClientConfiguration.defaultConfiguration());
+
+		assertThatIllegalStateException().isThrownBy(factory::getMultiDbClient);
+	}
+
+	@Test // GH-3253
+	void createMultiDbClientShouldRejectEmptyNodeList() {
+
+		LettuceConnectionFactory factory = new LettuceConnectionFactory(new RedisStandaloneConfiguration(),
+				LettuceTestClientConfiguration.defaultConfiguration());
+
+		assertThatIllegalArgumentException().isThrownBy(() -> factory.createMultiDbClient(new RedisMultiDbConfiguration()))
+				.withMessageContaining("At least one MultiDbNode");
+	}
+
+	@Test // GH-3253
+	void shouldExposeMultiDbCustomizersOnClientConfiguration() {
+
+		MultiDbOptionsBuilderCustomizer optionsCustomizer = builder -> {};
+		DatabaseConfigBuilderCustomizer databaseCustomizer = (node, builder) -> {};
+
+		LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder() //
+				.customizeMultiDbOptions(optionsCustomizer) //
+				.customizeDatabaseConfig(databaseCustomizer) //
+				.build();
+
+		LettuceConnectionFactory factory = new LettuceConnectionFactory(multiDbConfiguration(), clientConfig);
+
+		assertThat(factory.getClientConfiguration().getMultiDbOptionsCustomizer()).contains(optionsCustomizer);
+		assertThat(factory.getClientConfiguration().getDatabaseConfigCustomizer()).contains(databaseCustomizer);
 	}
 }

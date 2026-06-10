@@ -36,6 +36,8 @@ class DefaultJedisClientConfiguration implements JedisClientConfiguration {
 
 	private final Optional<JedisClientConfigBuilderCustomizer> clientConfigCustomizer;
 	private final Optional<JedisClientBuilderCustomizer> clientCustomizer;
+	private final Optional<MultiDbConfigBuilderCustomizer> multiDbConfigCustomizer;
+	private final Optional<DatabaseConfigBuilderCustomizer> databaseConfigCustomizer;
 	private final boolean useSsl;
 	private final Optional<SSLSocketFactory> sslSocketFactory;
 	private final Optional<SSLParameters> sslParameters;
@@ -47,13 +49,17 @@ class DefaultJedisClientConfiguration implements JedisClientConfiguration {
 	private final Duration connectTimeout;
 
 	DefaultJedisClientConfiguration(@Nullable JedisClientConfigBuilderCustomizer clientConfigCustomizer,
-			@Nullable JedisClientBuilderCustomizer clientCustomizer, boolean useSsl,
+			@Nullable JedisClientBuilderCustomizer clientCustomizer,
+			@Nullable MultiDbConfigBuilderCustomizer multiDbConfigCustomizer,
+			@Nullable DatabaseConfigBuilderCustomizer databaseConfigCustomizer, boolean useSsl,
 			@Nullable SSLSocketFactory sslSocketFactory, @Nullable SSLParameters sslParameters,
 			@Nullable HostnameVerifier hostnameVerifier, boolean usePooling, @Nullable GenericObjectPoolConfig<?> poolConfig,
 			@Nullable String clientName, Duration readTimeout, Duration connectTimeout) {
 
 		this.clientConfigCustomizer = Optional.ofNullable(clientConfigCustomizer);
 		this.clientCustomizer = Optional.ofNullable(clientCustomizer);
+		this.multiDbConfigCustomizer = Optional.ofNullable(multiDbConfigCustomizer);
+		this.databaseConfigCustomizer = Optional.ofNullable(databaseConfigCustomizer);
 		this.useSsl = useSsl;
 		this.sslSocketFactory = Optional.ofNullable(sslSocketFactory);
 		this.sslParameters = Optional.ofNullable(sslParameters);
@@ -73,6 +79,16 @@ class DefaultJedisClientConfiguration implements JedisClientConfiguration {
 	@Override
 	public Optional<JedisClientBuilderCustomizer> getClientCustomizer() {
 		return clientCustomizer;
+	}
+
+	@Override
+	public Optional<MultiDbConfigBuilderCustomizer> getMultiDbConfigCustomizer() {
+		return multiDbConfigCustomizer;
+	}
+
+	@Override
+	public Optional<DatabaseConfigBuilderCustomizer> getDatabaseConfigCustomizer() {
+		return databaseConfigCustomizer;
 	}
 
 	@Override

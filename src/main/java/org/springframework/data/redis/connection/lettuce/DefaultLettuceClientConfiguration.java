@@ -47,11 +47,15 @@ class DefaultLettuceClientConfiguration implements LettuceClientConfiguration {
 	private final Duration timeout;
 	private final Duration shutdownTimeout;
 	private final Duration shutdownQuietPeriod;
+	private final Optional<MultiDbOptionsBuilderCustomizer> multiDbOptionsCustomizer;
+	private final Optional<DatabaseConfigBuilderCustomizer> databaseConfigCustomizer;
 
 	DefaultLettuceClientConfiguration(boolean useSsl, SslVerifyMode verifyMode, boolean startTls,
 			@Nullable ClientResources clientResources, @Nullable ClientOptions clientOptions, @Nullable String clientName,
 			@Nullable ReadFrom readFrom, @Nullable RedisCredentialsProviderFactory redisCredentialsProviderFactory,
-			Duration timeout, Duration shutdownTimeout, Duration shutdownQuietPeriod) {
+			Duration timeout, Duration shutdownTimeout, Duration shutdownQuietPeriod,
+			@Nullable MultiDbOptionsBuilderCustomizer multiDbOptionsCustomizer,
+			@Nullable DatabaseConfigBuilderCustomizer databaseConfigCustomizer) {
 
 		this.useSsl = useSsl;
 		this.verifyMode = verifyMode;
@@ -64,6 +68,8 @@ class DefaultLettuceClientConfiguration implements LettuceClientConfiguration {
 		this.timeout = timeout;
 		this.shutdownTimeout = shutdownTimeout;
 		this.shutdownQuietPeriod = shutdownQuietPeriod;
+		this.multiDbOptionsCustomizer = Optional.ofNullable(multiDbOptionsCustomizer);
+		this.databaseConfigCustomizer = Optional.ofNullable(databaseConfigCustomizer);
 	}
 
 	@Override
@@ -124,5 +130,15 @@ class DefaultLettuceClientConfiguration implements LettuceClientConfiguration {
 	@Override
 	public Duration getShutdownQuietPeriod() {
 		return shutdownQuietPeriod;
+	}
+
+	@Override
+	public Optional<MultiDbOptionsBuilderCustomizer> getMultiDbOptionsCustomizer() {
+		return multiDbOptionsCustomizer;
+	}
+
+	@Override
+	public Optional<DatabaseConfigBuilderCustomizer> getDatabaseConfigCustomizer() {
+		return databaseConfigCustomizer;
 	}
 }

@@ -122,6 +122,16 @@ public interface RedisConfiguration {
 
 	/**
 	 * @param configuration can be {@literal null}.
+	 * @return {@code true} if given {@code RedisConfiguration} is instance of {@link RedisMultiDbConfiguration}.
+	 * @since 4.0
+	 */
+	@Contract("null -> false")
+	static boolean isMultiDbConfiguration(@Nullable RedisConfiguration configuration) {
+		return configuration instanceof RedisMultiDbConfiguration;
+	}
+
+	/**
+	 * @param configuration can be {@literal null}.
 	 * @return {@code true} if given {@code RedisConfiguration} is instance of {@link DomainSocketConfiguration}.
 	 */
 	@Contract("null -> false")

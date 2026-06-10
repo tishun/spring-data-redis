@@ -19,7 +19,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 
+import org.springframework.data.redis.connection.MultiDbNode;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisMultiDbConfiguration;
+import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.RedisSocketConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -135,6 +138,53 @@ public abstract class SettingsUtils {
 	 */
 	public static RedisSocketConfiguration socketConfiguration() {
 		return new RedisSocketConfiguration(getSocket());
+	}
+
+	/**
+	 * @return the highest-weight endpoint port for the Mode M1 multi-database setup. Reuses the shared no-auth standalone
+	 *         node so no dedicated infrastructure is required.
+	 */
+	public static int getMultiDbPortA() {
+		return 6379;
+	}
+
+	/**
+	 * @return the lower-weight endpoint port for the Mode M1 multi-database setup. Reuses the shared auth-protected
+	 *         standalone node (password {@code foobared}) as an independent second region.
+	 */
+	public static int getMultiDbPortB() {
+		return 6382;
+	}
+
+	/**
+	 * Construct a new {@link RedisMultiDbConfiguration} for Mode M1 — two independent standalone Redis instances acting
+	 * as stand-ins for separate geographic regions. The two nodes share no data; failover discards writes made against
+	 * the previous endpoint, matching realistic cache / session / rate-limiter workloads. The setup reuses the shared
+	 * no-auth node (6379) and auth-protected node (6382, password {@code foobared} supplied per-node) rather than
+	 * dedicated containers.
+	 *
+	 * @return a new {@link RedisMultiDbConfiguration} initialized with test endpoint settings.
+	 */
+	public static RedisMultiDbConfiguration multiDbConfiguration() {
+
+		return RedisMultiDbConfiguration.descending()
+				.node(MultiDbNode.host(getHost(), getMultiDbPortA()))
+				.node(MultiDbNode.host(getHost(), getMultiDbPortB())
+						.withAuthentication(RedisPassword.of("foobared")));
+	}
+
+	/**
+	 * Construct a new {@link RedisMultiDbConfiguration} for Mode M2 — geo-distributed OSS read-replicas of the existing
+	 * Sentinel master. Targets the two replica ports; writes must be routed via a separate {@code RedisConnectionFactory}
+	 * aimed at the master.
+	 *
+	 * @return a new {@link RedisMultiDbConfiguration} initialized with replica endpoint settings.
+	 */
+	public static RedisMultiDbConfiguration multiDbReplicaConfiguration() {
+
+		return RedisMultiDbConfiguration.descending()
+				.node(MultiDbNode.host(getHost(), 6380))
+				.node(MultiDbNode.host(getHost(), 6381));
 	}
 
 }

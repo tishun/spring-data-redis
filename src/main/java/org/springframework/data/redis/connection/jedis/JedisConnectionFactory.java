@@ -19,13 +19,19 @@ import redis.clients.jedis.*;
 import redis.clients.jedis.builders.ClusterClientBuilder;
 import redis.clients.jedis.builders.SentinelClientBuilder;
 import redis.clients.jedis.builders.StandaloneClientBuilder;
+import redis.clients.jedis.mcf.HealthCheckStrategy;
+import redis.clients.jedis.mcf.InitializationPolicy;
+import redis.clients.jedis.mcf.PingStrategy;
+import redis.clients.jedis.mcf.ProbingPolicy;
 import redis.clients.jedis.util.Pool;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -302,6 +308,35 @@ public class JedisConnectionFactory
 		this.standaloneConfig = standaloneConfiguration;
 	}
 
+	/**
+	 * Constructs a new {@link JedisConnectionFactory} instance using the given {@link RedisMultiDbConfiguration} to create
+	 * a client-side geographic failover (multi-database) {@link MultiDbClient}.
+	 *
+	 * @param multiDbConfiguration must not be {@literal null}.
+	 * @since 4.0
+	 */
+	public JedisConnectionFactory(RedisMultiDbConfiguration multiDbConfiguration) {
+		this(multiDbConfiguration, new MutableJedisClientConfiguration());
+	}
+
+	/**
+	 * Constructs a new {@link JedisConnectionFactory} instance using the given {@link RedisMultiDbConfiguration} and
+	 * {@link JedisClientConfiguration}.
+	 *
+	 * @param multiDbConfiguration must not be {@literal null}.
+	 * @param clientConfiguration must not be {@literal null}.
+	 * @since 4.0
+	 */
+	public JedisConnectionFactory(RedisMultiDbConfiguration multiDbConfiguration,
+			JedisClientConfiguration clientConfiguration) {
+
+		this(clientConfiguration);
+
+		Assert.notNull(multiDbConfiguration, "RedisMultiDbConfiguration must not be null");
+
+		this.configuration = multiDbConfiguration;
+	}
+
 	ClusterCommandExecutor getRequiredClusterCommandExecutor() {
 
 		if (this.clusterCommandExecutor == null) {
@@ -455,7 +490,7 @@ public class JedisConnectionFactory
 	 */
 	@Deprecated
 	public boolean getUsePool() {
-		if (isUseUnifiedJedis()) {
+		if (isUseUnifiedJedis() || isMultiDbAware()) {
 			return true;
 		}
 
@@ -477,6 +512,11 @@ public class JedisConnectionFactory
 
 		if (isRedisSentinelAware() && !usePool) {
 			throw new IllegalStateException("Jedis requires pooling for Redis Sentinel use");
+		}
+
+		if (isMultiDbAware() && !usePool) {
+			throw new IllegalStateException(
+					"Client-side geographic failover (multi-database) manages connection pooling within the driver");
 		}
 
 		getMutableConfiguration().setUsePooling(usePool);
@@ -613,6 +653,14 @@ public class JedisConnectionFactory
 		return RedisConfiguration.isClusterConfiguration(configuration) ? (RedisClusterConfiguration) configuration : null;
 	}
 
+	/**
+	 * @return the {@link RedisMultiDbConfiguration}, may be {@literal null}.
+	 * @since 4.0
+	 */
+	public @Nullable RedisMultiDbConfiguration getMultiDbConfiguration() {
+		return RedisConfiguration.isMultiDbConfiguration(configuration) ? (RedisMultiDbConfiguration) configuration : null;
+	}
+
 	@Override
 	public int getPhase() {
 		return this.phase;
@@ -717,8 +765,21 @@ public class JedisConnectionFactory
 		return RedisConfiguration.isClusterConfiguration(configuration);
 	}
 
+	/**
+	 * @return true when {@link RedisMultiDbConfiguration} is present.
+	 * @since 4.0
+	 */
+	public boolean isMultiDbAware() {
+		return RedisConfiguration.isMultiDbConfiguration(configuration);
+	}
+
 	@Override
 	public void afterPropertiesSet() {
+
+		if (isMultiDbAware() && !isUseUnifiedJedis()) {
+			throw new IllegalStateException(
+					"Client-side geographic failover (multi-database) requires UnifiedJedis; do not disable it via setUseUnifiedJedis(false)");
+		}
 
 		this.clientConfig = createClientConfig(getDatabase(), getRedisUsername(), getRedisPassword());
 
@@ -805,7 +866,9 @@ public class JedisConnectionFactory
 
 	@SuppressWarnings("NullAway")
 	private UnifiedJedis createRedisClient() {
-		if (isRedisClusterAware()) {
+		if (isMultiDbAware()) {
+			return createMultiDbClient(getMultiDbConfiguration());
+		} else if (isRedisClusterAware()) {
 			return createRedisClusterClient(getClusterConfiguration());
 		} else if (isRedisSentinelAware()) {
 			return createRedisSentinelClient(getSentinelConfiguration());
@@ -1119,6 +1182,124 @@ public class JedisConnectionFactory
 
 		getClientConfiguration().getClientCustomizer().ifPresent(customizer -> customizer.customize(builder));
 		return builder.build();
+	}
+
+	/**
+	 * Creates a new {@link MultiDbClient} for client-side geographic failover (multi-database) from the given
+	 * {@link RedisMultiDbConfiguration}. The cross-driver {@link MultiDbClientOptions} are mapped onto the Jedis
+	 * {@link MultiDbConfig} and each {@link MultiDbNode} onto a {@link MultiDbConfig.DatabaseConfig}. The optional
+	 * {@link MultiDbConfigBuilderCustomizer} and {@link DatabaseConfigBuilderCustomizer} are invoked last so users can
+	 * apply driver-native settings that have no cross-driver counterpart.
+	 *
+	 * @param configuration the multi-database configuration to use.
+	 * @return the {@link MultiDbClient} instance.
+	 * @since 4.0
+	 */
+	protected MultiDbClient createMultiDbClient(RedisMultiDbConfiguration configuration) {
+
+		MultiDbClientOptions options = configuration.getClientOptions();
+		List<MultiDbNode> nodes = configuration.getNodes();
+
+		Assert.notEmpty(nodes, "At least one MultiDbNode must be configured");
+
+		MultiDbConfig.DatabaseConfig[] databases = new MultiDbConfig.DatabaseConfig[nodes.size()];
+		for (int i = 0; i < nodes.size(); i++) {
+			databases[i] = createDatabaseConfig(nodes.get(i), configuration, options);
+		}
+
+		MultiDbConfig.Builder builder = MultiDbConfig.builder(databases) //
+				.failureDetector(createCircuitBreakerConfig(options)) //
+				.failbackSupported(options.isFailbackEnabled()) //
+				.failbackCheckInterval(options.getFailbackCheckInterval().toMillis()) //
+				.gracePeriod(options.getGracePeriod().toMillis()) //
+				.delayInBetweenFailoverAttempts((int) options.getDelayBetweenFailoverAttempts().toMillis()) //
+				.initializationPolicy(toInitializationPolicy(options.getInitialDatabaseState()));
+
+		getClientConfiguration().getMultiDbConfigCustomizer().ifPresent(customizer -> customizer.customize(builder));
+
+		return MultiDbClient.builder().multiDbConfig(builder.build()).build();
+	}
+
+	/**
+	 * Creates a Jedis {@link MultiDbConfig.DatabaseConfig} for a single {@link MultiDbNode}.
+	 */
+	private MultiDbConfig.DatabaseConfig createDatabaseConfig(MultiDbNode node, RedisMultiDbConfiguration configuration,
+			MultiDbClientOptions options) {
+
+		HostAndPort endpoint = new HostAndPort(node.getHost(), node.getPort());
+		JedisClientConfig nodeClientConfig = createMultiDbNodeClientConfig(node, configuration);
+
+		MultiDbConfig.DatabaseConfig.Builder builder = MultiDbConfig.DatabaseConfig.builder(endpoint, nodeClientConfig) //
+				.weight(node.getWeightOrDefault()) //
+				.healthCheckEnabled(options.isHealthCheckEnabled());
+
+		if (options.isHealthCheckEnabled()) {
+			builder.healthCheckStrategySupplier(createHealthCheckStrategySupplier(options));
+		}
+
+		getClientConfiguration().getDatabaseConfigCustomizer()
+				.ifPresent(customizer -> customizer.customize(node, builder));
+
+		return builder.build();
+	}
+
+	/**
+	 * Builds the per-node {@link JedisClientConfig}, resolving per-node credentials and falling back to the credentials of
+	 * the {@link RedisMultiDbConfiguration} when a node does not define its own.
+	 */
+	private JedisClientConfig createMultiDbNodeClientConfig(MultiDbNode node, RedisMultiDbConfiguration configuration) {
+
+		String username = node.getUsername() != null ? node.getUsername() : configuration.getUsername();
+		RedisPassword password = node.getPassword() != null ? node.getPassword() : configuration.getPassword();
+
+		return createClientConfig(node.getDatabaseOrDefault(MultiDbNode.DEFAULT_DATABASE), username, password);
+	}
+
+	/**
+	 * Maps the cross-driver failure-detector options onto a Jedis {@link MultiDbConfig.CircuitBreakerConfig}.
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static MultiDbConfig.CircuitBreakerConfig createCircuitBreakerConfig(MultiDbClientOptions options) {
+
+		return MultiDbConfig.CircuitBreakerConfig.builder() //
+				.failureRateThreshold(options.getFailureRateThreshold()) //
+				.minNumOfFailures(options.getMinimumNumberOfFailures()) //
+				.slidingWindowSize((int) options.getSlidingWindowSize().toSeconds()) //
+				.includedExceptionList(new ArrayList<Class>(options.getTrackedExceptions())) //
+				.build();
+	}
+
+	/**
+	 * Builds a {@link MultiDbConfig.StrategySupplier} producing a {@link PingStrategy} seeded with the cross-driver
+	 * health-check options.
+	 */
+	private static MultiDbConfig.StrategySupplier createHealthCheckStrategySupplier(MultiDbClientOptions options) {
+
+		HealthCheckStrategy.Config config = HealthCheckStrategy.Config.builder() //
+				.interval((int) options.getHealthCheckInterval().toMillis()) //
+				.timeout((int) options.getHealthCheckTimeout().toMillis()) //
+				.numProbes(options.getHealthCheckNumberOfProbes()) //
+				.delayInBetweenProbes((int) options.getHealthCheckDelayBetweenProbes().toMillis()) //
+				.policy(toProbingPolicy(options.getHealthCheckPolicy())) //
+				.build();
+
+		return (hostAndPort, clientConfig) -> new PingStrategy(hostAndPort, clientConfig, config);
+	}
+
+	private static InitializationPolicy toInitializationPolicy(MultiDbClientOptions.InitialDatabaseState state) {
+		return switch (state) {
+			case ALL_AVAILABLE -> InitializationPolicy.BuiltIn.ALL_AVAILABLE;
+			case MAJORITY_AVAILABLE -> InitializationPolicy.BuiltIn.MAJORITY_AVAILABLE;
+			case ONE_AVAILABLE -> InitializationPolicy.BuiltIn.ONE_AVAILABLE;
+		};
+	}
+
+	private static ProbingPolicy toProbingPolicy(MultiDbClientOptions.HealthCheckPolicy policy) {
+		return switch (policy) {
+			case ALL -> ProbingPolicy.BuiltIn.ALL_SUCCESS;
+			case MAJORITY -> ProbingPolicy.BuiltIn.MAJORITY_SUCCESS;
+			case ANY -> ProbingPolicy.BuiltIn.ANY_SUCCESS;
+		};
 	}
 
 	/**

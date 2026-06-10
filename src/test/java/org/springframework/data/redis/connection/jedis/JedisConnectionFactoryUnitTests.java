@@ -43,7 +43,9 @@ import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.MultiDbNode;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisMultiDbConfiguration;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -748,5 +750,66 @@ class JedisConnectionFactoryUnitTests {
 		doReturn(null).when(connectionFactorySpy).createRedisPool();
 
 		return connectionFactorySpy;
+	}
+
+	private static RedisMultiDbConfiguration multiDbConfiguration() {
+		return RedisMultiDbConfiguration.descending() //
+				.node(MultiDbNode.host("127.0.0.1", 6379)) //
+				.node(MultiDbNode.host("127.0.0.1", 6380));
+	}
+
+	@Test // GH-3253
+	void shouldRecognizeMultiDbConfiguration() {
+
+		RedisMultiDbConfiguration configuration = multiDbConfiguration();
+
+		JedisConnectionFactory factory = new JedisConnectionFactory(configuration);
+
+		assertThat(factory.isMultiDbAware()).isTrue();
+		assertThat(factory.getMultiDbConfiguration()).isSameAs(configuration);
+		assertThat(factory.isUseUnifiedJedis()).isTrue();
+	}
+
+	@Test // GH-3253
+	void shouldRejectPoolDisablingWhenMultiDbConfigurationPresent() {
+
+		JedisConnectionFactory factory = new JedisConnectionFactory(multiDbConfiguration());
+
+		assertThatIllegalStateException().isThrownBy(() -> factory.setUsePool(false));
+	}
+
+	@Test // GH-3253
+	void shouldReturnNullMultiDbConfigurationForStandalone() {
+
+		JedisConnectionFactory factory = new JedisConnectionFactory(new RedisStandaloneConfiguration());
+
+		assertThat(factory.isMultiDbAware()).isFalse();
+		assertThat(factory.getMultiDbConfiguration()).isNull();
+	}
+
+	@Test // GH-3253
+	void createMultiDbClientShouldRejectEmptyNodeList() {
+
+		JedisConnectionFactory factory = new JedisConnectionFactory(new RedisStandaloneConfiguration());
+
+		assertThatIllegalArgumentException().isThrownBy(() -> factory.createMultiDbClient(new RedisMultiDbConfiguration()))
+				.withMessageContaining("At least one MultiDbNode");
+	}
+
+	@Test // GH-3253
+	void shouldExposeMultiDbCustomizersOnClientConfiguration() {
+
+		MultiDbConfigBuilderCustomizer multiDbCustomizer = builder -> {};
+		DatabaseConfigBuilderCustomizer databaseCustomizer = (node, builder) -> {};
+
+		JedisClientConfiguration clientConfig = JedisClientConfiguration.builder() //
+				.customizeMultiDbConfig(multiDbCustomizer) //
+				.customizeDatabaseConfig(databaseCustomizer) //
+				.build();
+
+		JedisConnectionFactory factory = new JedisConnectionFactory(multiDbConfiguration(), clientConfig);
+
+		assertThat(factory.getClientConfiguration().getMultiDbConfigCustomizer()).contains(multiDbCustomizer);
+		assertThat(factory.getClientConfiguration().getDatabaseConfigCustomizer()).contains(databaseCustomizer);
 	}
 }

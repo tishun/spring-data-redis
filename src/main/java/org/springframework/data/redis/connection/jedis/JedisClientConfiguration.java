@@ -75,10 +75,30 @@ public interface JedisClientConfiguration {
 	Optional<JedisClientConfigBuilderCustomizer> getClientConfigCustomizer();
 
 	/**
-	 * @return the optional {@link JedisClientConfigBuilderCustomizer}.
+	 * @return the optional {@link JedisClientBuilderCustomizer}.
 	 * @since 4.1
 	 */
 	Optional<JedisClientBuilderCustomizer> getClientCustomizer();
+
+	/**
+	 * @return the optional {@link MultiDbConfigBuilderCustomizer} applied to the global
+	 *         {@link redis.clients.jedis.MultiDbConfig.Builder} when a
+	 *         {@link org.springframework.data.redis.connection.RedisMultiDbConfiguration} is in use.
+	 * @since 4.0
+	 */
+	default Optional<MultiDbConfigBuilderCustomizer> getMultiDbConfigCustomizer() {
+		return Optional.empty();
+	}
+
+	/**
+	 * @return the optional {@link DatabaseConfigBuilderCustomizer} applied to the per-node
+	 *         {@link redis.clients.jedis.MultiDbConfig.DatabaseConfig.Builder} when a
+	 *         {@link org.springframework.data.redis.connection.RedisMultiDbConfiguration} is in use.
+	 * @since 4.0
+	 */
+	default Optional<DatabaseConfigBuilderCustomizer> getDatabaseConfigCustomizer() {
+		return Optional.empty();
+	}
 
 	/**
 	 * @return {@literal true} to use SSL, {@literal false} to use unencrypted connections.
@@ -196,6 +216,28 @@ public interface JedisClientConfiguration {
 		 * @since 4.1
 		 */
 		JedisClientConfigurationBuilder customizeClient(JedisClientBuilderCustomizer customizer);
+
+		/**
+		 * Configure a {@link MultiDbConfigBuilderCustomizer} to customize the global
+		 * {@link redis.clients.jedis.MultiDbConfig.Builder} used for client-side geographic failover (multi-database)
+		 * setups.
+		 *
+		 * @param customizer must not be {@literal null}.
+		 * @return {@link JedisClientConfigurationBuilder}.
+		 * @since 4.0
+		 */
+		JedisClientConfigurationBuilder customizeMultiDbConfig(MultiDbConfigBuilderCustomizer customizer);
+
+		/**
+		 * Configure a {@link DatabaseConfigBuilderCustomizer} to customize the per-node
+		 * {@link redis.clients.jedis.MultiDbConfig.DatabaseConfig.Builder} used for client-side geographic failover
+		 * (multi-database) setups.
+		 *
+		 * @param customizer must not be {@literal null}.
+		 * @return {@link JedisClientConfigurationBuilder}.
+		 * @since 4.0
+		 */
+		JedisClientConfigurationBuilder customizeDatabaseConfig(DatabaseConfigBuilderCustomizer customizer);
 
 		/**
 		 * Enable SSL connections.
@@ -326,6 +368,8 @@ public interface JedisClientConfiguration {
 
 		private @Nullable JedisClientConfigBuilderCustomizer clientConfigCustomizer;
 		private @Nullable JedisClientBuilderCustomizer clientCustomizer;
+		private @Nullable MultiDbConfigBuilderCustomizer multiDbConfigCustomizer;
+		private @Nullable DatabaseConfigBuilderCustomizer databaseConfigCustomizer;
 		private boolean useSsl;
 		private @Nullable SSLSocketFactory sslSocketFactory;
 		private @Nullable SSLParameters sslParameters;
@@ -350,6 +394,24 @@ public interface JedisClientConfiguration {
 			Assert.notNull(customizer, "JedisClientBuilderCustomizer must not be null");
 
 			this.clientCustomizer = customizer;
+			return this;
+		}
+
+		@Override
+		public JedisClientConfigurationBuilder customizeMultiDbConfig(MultiDbConfigBuilderCustomizer customizer) {
+
+			Assert.notNull(customizer, "MultiDbConfigBuilderCustomizer must not be null");
+
+			this.multiDbConfigCustomizer = customizer;
+			return this;
+		}
+
+		@Override
+		public JedisClientConfigurationBuilder customizeDatabaseConfig(DatabaseConfigBuilderCustomizer customizer) {
+
+			Assert.notNull(customizer, "DatabaseConfigBuilderCustomizer must not be null");
+
+			this.databaseConfigCustomizer = customizer;
 			return this;
 		}
 
@@ -438,7 +500,8 @@ public interface JedisClientConfiguration {
 		@Override
 		public JedisClientConfiguration build() {
 
-			return new DefaultJedisClientConfiguration(clientConfigCustomizer, clientCustomizer, useSsl, sslSocketFactory,
+			return new DefaultJedisClientConfiguration(clientConfigCustomizer, clientCustomizer, multiDbConfigCustomizer,
+					databaseConfigCustomizer, useSsl, sslSocketFactory,
 					sslParameters, hostnameVerifier,
 					usePooling, poolConfig, clientName, readTimeout, connectTimeout);
 		}

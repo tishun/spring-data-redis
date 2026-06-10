@@ -21,6 +21,7 @@ import redis.clients.jedis.JedisPoolConfig;
 
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.Optional;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -28,6 +29,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -79,6 +81,71 @@ class JedisClientConfigurationUnitTests {
 		assertThat(configuration.getReadTimeout()).isEqualTo(Duration.ofHours(5));
 
 		assertThat(configuration.getPoolConfig()).contains(poolConfig);
+	}
+
+	@Test // GH-3253
+	void multiDbCustomizersDefaultToEmpty() {
+
+		JedisClientConfiguration configuration = new JedisClientConfiguration() {
+
+			@Override
+			public Optional<JedisClientConfigBuilderCustomizer> getClientConfigCustomizer() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Optional<JedisClientBuilderCustomizer> getClientCustomizer() {
+				return Optional.empty();
+			}
+
+			@Override
+			public boolean isUseSsl() {
+				return false;
+			}
+
+			@Override
+			public Optional<SSLSocketFactory> getSslSocketFactory() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Optional<SSLParameters> getSslParameters() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Optional<HostnameVerifier> getHostnameVerifier() {
+				return Optional.empty();
+			}
+
+			@Override
+			public boolean isUsePooling() {
+				return false;
+			}
+
+			@Override
+			public Optional<GenericObjectPoolConfig<?>> getPoolConfig() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Optional<String> getClientName() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Duration getConnectTimeout() {
+				return Duration.ZERO;
+			}
+
+			@Override
+			public Duration getReadTimeout() {
+				return Duration.ZERO;
+			}
+		};
+
+		assertThat(configuration.getMultiDbConfigCustomizer()).isEmpty();
+		assertThat(configuration.getDatabaseConfigCustomizer()).isEmpty();
 	}
 
 	enum MyHostnameVerifier implements HostnameVerifier {

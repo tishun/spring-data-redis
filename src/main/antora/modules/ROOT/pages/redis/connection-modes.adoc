@@ -172,3 +172,67 @@ public class AppConfig {
 ====
 
 NOTE: The initial configuration points driver libraries to an initial set of cluster nodes. Changes resulting from live cluster reconfiguration are kept only in the native driver and are not written back to the configuration.
+
+[[redis:multidb]]
+== Multi-Database (Client-Side Geographic Failover)
+
+For geographically distributed deployments, Spring Data Redis supports client-side failover across multiple, Redis databases (endpoints) using javadoc:org.springframework.data.redis.connection.RedisMultiDbConfiguration[].
+The configuration carries an ordered list of weighted javadoc:org.springframework.data.redis.connection.MultiDbNode[database endpoints] together with the cross-driver javadoc:org.springframework.data.redis.connection.MultiDbClientOptions[failover options] shared by Jedis and Lettuce.
+When supplied to a connection factory, the factory builds the driver's multi-database client instead of a regular single-endpoint client.
+
+Node order derives the failover priority: `descending()` gives the first node the highest weight (preferred for active and failback), `ascending()` reverses this.
+
+[source,java]
+----
+@Configuration
+class RedisMultiDbConfig {
+
+  @Bean
+  public RedisConnectionFactory redisConnectionFactory() {
+
+    RedisMultiDbConfiguration configuration = RedisMultiDbConfiguration.descending()
+      .node(MultiDbNode.host("east.example.com", 6379))
+      .node(MultiDbNode.host("west.example.com", 6379))
+      .username("default")
+      .password("secret")
+      .clientOptions(MultiDbClientOptions.defaults()
+        .failbackEnabled(true)
+        .gracePeriod(Duration.ofSeconds(60)));
+
+    return new LettuceConnectionFactory(configuration); // or JedisConnectionFactory
+  }
+}
+----
+
+
+[NOTE]
+====
+The Jedis multi-database client relies on https://resilience4j.readme.io/[Resilience4j] for circuit breaking and retries. Add `io.github.resilience4j:resilience4j-all` to your runtime classpath when using the Jedis driver with `RedisMultiDbConfiguration`.
+====
+
+[TIP]
+====
+`RedisMultiDbConfiguration` can also be configured using any of the approaches described in https://docs.spring.io/spring-boot/reference/features/external-config.html[Externalized Configuration]. Node order is the failover priority (highest first).
+
+.Connection / topology
+- `spring.redis.multidb.nodes`: Comma-delimited list of host:port pairs (order = priority).
+- `spring.redis.multidb.username`: Username inherited by nodes that do not define their own.
+- `spring.redis.multidb.password`: Password inherited by nodes that do not define their own.
+
+.Cross-driver failover options (`Duration` values accept `5s`, `500ms`, `2m`, or ISO-8601)
+- `spring.redis.multidb.failure-rate-threshold`: Failure rate (percent) above which a database circuit opens.
+- `spring.redis.multidb.minimum-number-of-failures`: Minimum failures before the failure rate is evaluated.
+- `spring.redis.multidb.sliding-window-size`: Window over which failures are counted.
+- `spring.redis.multidb.tracked-exceptions`: Comma-delimited list of fully-qualified exception class names counted as failures.
+- `spring.redis.multidb.failback-enabled`: Whether automatic failback to a higher-weight database is enabled.
+- `spring.redis.multidb.failback-check-interval`: Interval at which failback availability is checked.
+- `spring.redis.multidb.grace-period`: Time an opened circuit stays open before transitioning to half-open.
+- `spring.redis.multidb.delay-between-failover-attempts`: Delay between successive failover attempts.
+- `spring.redis.multidb.health-check-enabled`: Whether health checking is enabled.
+- `spring.redis.multidb.health-check-interval`: Interval between health checks.
+- `spring.redis.multidb.health-check-timeout`: Timeout for a single health check.
+- `spring.redis.multidb.health-check-number-of-probes`: Number of probes per health check.
+- `spring.redis.multidb.health-check-delay-between-probes`: Delay between probes within a health check.
+- `spring.redis.multidb.health-check-policy`: One of `ALL`, `MAJORITY`, `ANY`.
+- `spring.redis.multidb.initial-database-state`: One of `ALL_AVAILABLE`, `MAJORITY_AVAILABLE`, `ONE_AVAILABLE`.
+====

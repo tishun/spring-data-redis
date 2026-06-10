@@ -18,12 +18,14 @@ package org.springframework.data.redis.connection.lettuce;
 import static org.assertj.core.api.Assertions.*;
 
 import io.lettuce.core.ClientOptions;
+import io.lettuce.core.ReadFrom;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.SslVerifyMode;
 import io.lettuce.core.TimeoutOptions;
 import io.lettuce.core.resource.ClientResources;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -134,5 +136,75 @@ class LettuceClientConfigurationUnitTests {
 
 		assertThat(configuration.getClientName()).contains("hello");
 		assertThat(configuration.getCommandTimeout()).isEqualTo(Duration.ofMillis(1));
+	}
+
+	@Test // GH-3253
+	void multiDbCustomizersDefaultToEmpty() {
+
+		LettuceClientConfiguration configuration = new LettuceClientConfiguration() {
+
+			@Override
+			public boolean isUseSsl() {
+				return false;
+			}
+
+			@Override
+			public boolean isVerifyPeer() {
+				return true;
+			}
+
+			@Override
+			public SslVerifyMode getVerifyMode() {
+				return SslVerifyMode.FULL;
+			}
+
+			@Override
+			public boolean isStartTls() {
+				return false;
+			}
+
+			@Override
+			public Optional<ClientResources> getClientResources() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Optional<ClientOptions> getClientOptions() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Optional<String> getClientName() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Optional<ReadFrom> getReadFrom() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Optional<RedisCredentialsProviderFactory> getRedisCredentialsProviderFactory() {
+				return Optional.empty();
+			}
+
+			@Override
+			public Duration getCommandTimeout() {
+				return Duration.ZERO;
+			}
+
+			@Override
+			public Duration getShutdownTimeout() {
+				return Duration.ZERO;
+			}
+
+			@Override
+			public Duration getShutdownQuietPeriod() {
+				return Duration.ZERO;
+			}
+		};
+
+		assertThat(configuration.getMultiDbOptionsCustomizer()).isEmpty();
+		assertThat(configuration.getDatabaseConfigCustomizer()).isEmpty();
 	}
 }

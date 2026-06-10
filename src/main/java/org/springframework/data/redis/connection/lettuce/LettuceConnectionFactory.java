@@ -32,6 +32,15 @@ import io.lettuce.core.cluster.ClusterClientOptions;
 import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
 import io.lettuce.core.codec.RedisCodec;
+import io.lettuce.core.failover.MultiDbClient;
+import io.lettuce.core.failover.api.CircuitBreakerConfig;
+import io.lettuce.core.failover.api.DatabaseConfig;
+import io.lettuce.core.failover.api.InitializationPolicy;
+import io.lettuce.core.failover.api.MultiDbOptions;
+import io.lettuce.core.failover.health.HealthCheckStrategy;
+import io.lettuce.core.failover.health.HealthCheckStrategySupplier;
+import io.lettuce.core.failover.health.PingStrategy;
+import io.lettuce.core.failover.health.ProbingPolicy;
 import io.lettuce.core.resource.ClientResources;
 
 import java.nio.ByteBuffer;
@@ -39,6 +48,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -96,6 +106,7 @@ import org.springframework.util.StringUtils;
  * <li>{@link RedisSocketConfiguration}</li>
  * <li>{@link RedisSentinelConfiguration}</li>
  * <li>{@link RedisClusterConfiguration}</li>
+ * <li>{@link RedisMultiDbConfiguration}</li>
  * </ul>
  * <p>
  * This connection factory implements {@link InitializingBean} and {@link SmartLifecycle} for flexible lifecycle
@@ -303,6 +314,35 @@ public class LettuceConnectionFactory implements RedisConnectionFactory, Reactiv
 
 		this.standaloneConfig = standaloneConfiguration;
 		this.configuration = this.standaloneConfig;
+	}
+
+	/**
+	 * Constructs a new {@link LettuceConnectionFactory} instance using the given {@link RedisMultiDbConfiguration} to
+	 * create a client-side geographic failover (multi-database) {@link MultiDbClient}.
+	 *
+	 * @param multiDbConfiguration must not be {@literal null}.
+	 * @since 4.0
+	 */
+	public LettuceConnectionFactory(RedisMultiDbConfiguration multiDbConfiguration) {
+		this(multiDbConfiguration, new MutableLettuceClientConfiguration());
+	}
+
+	/**
+	 * Constructs a new {@link LettuceConnectionFactory} instance using the given {@link RedisMultiDbConfiguration} and
+	 * {@link LettuceClientConfiguration}.
+	 *
+	 * @param multiDbConfiguration must not be {@literal null}.
+	 * @param clientConfiguration must not be {@literal null}.
+	 * @since 4.0
+	 */
+	public LettuceConnectionFactory(RedisMultiDbConfiguration multiDbConfiguration,
+			LettuceClientConfiguration clientConfiguration) {
+
+		this(clientConfiguration);
+
+		Assert.notNull(multiDbConfiguration, "RedisMultiDbConfiguration must not be null");
+
+		this.configuration = multiDbConfiguration;
 	}
 
 	/**
@@ -676,6 +716,18 @@ public class LettuceConnectionFactory implements RedisConnectionFactory, Reactiv
 		return client;
 	}
 
+	/**
+	 * Returns the underlying {@link MultiDbClient} when this factory is configured with a
+	 * {@link RedisMultiDbConfiguration}.
+	 *
+	 * @return the {@link MultiDbClient}, or {@literal null} if not initialized or not multi-database aware.
+	 * @since 4.0
+	 */
+	public @Nullable MultiDbClient getMultiDbClient() {
+		assertStarted();
+		return this.client instanceof MultiDbClient mdc ? mdc : null;
+	}
+
 	private @Nullable String getRedisUsername() {
 		return RedisConfiguration.getUsernameOrElse(configuration, standaloneConfig::getUsername);
 	}
@@ -798,6 +850,14 @@ public class LettuceConnectionFactory implements RedisConnectionFactory, Reactiv
 		return isClusterAware() ? (RedisClusterConfiguration) this.configuration : null;
 	}
 
+	/**
+	 * @return the {@link RedisMultiDbConfiguration}, may be {@literal null}.
+	 * @since 4.0
+	 */
+	public @Nullable RedisMultiDbConfiguration getMultiDbConfiguration() {
+		return isMultiDbAware() ? (RedisMultiDbConfiguration) this.configuration : null;
+	}
+
 	@Override
 	public int getPhase() {
 		return this.phase;
@@ -916,6 +976,14 @@ public class LettuceConnectionFactory implements RedisConnectionFactory, Reactiv
 	 */
 	public boolean isClusterAware() {
 		return RedisConfiguration.isClusterConfiguration(this.configuration);
+	}
+
+	/**
+	 * @return true when {@link RedisMultiDbConfiguration} is present.
+	 * @since 4.0
+	 */
+	public boolean isMultiDbAware() {
+		return RedisConfiguration.isMultiDbConfiguration(this.configuration);
 	}
 
 	@Override
@@ -1308,6 +1376,10 @@ public class LettuceConnectionFactory implements RedisConnectionFactory, Reactiv
 	 */
 	protected LettuceConnectionProvider doCreateConnectionProvider(AbstractRedisClient client, RedisCodec<?, ?> codec) {
 
+		if (isMultiDbAware()) {
+			return new MultiDbConnectionProvider((MultiDbClient) client, codec);
+		}
+
 		return isStaticMasterReplicaAware() ? createStaticMasterReplicaConnectionProvider((RedisClient) client, codec)
 				: isClusterAware() ? createClusterConnectionProvider((RedisClusterClient) client, codec)
 						: createStandaloneConnectionProvider((RedisClient) client, codec);
@@ -1333,7 +1405,12 @@ public class LettuceConnectionFactory implements RedisConnectionFactory, Reactiv
 		return new StandaloneConnectionProvider(client, codec, getClientConfiguration().getReadFrom().orElse(null));
 	}
 
+	@SuppressWarnings("NullAway")
 	protected AbstractRedisClient createClient() {
+
+		if (isMultiDbAware()) {
+			return (AbstractRedisClient) createMultiDbClient(getMultiDbConfiguration());
+		}
 
 		return isStaticMasterReplicaAware() ? createStaticMasterReplicaClient()
 				: isRedisSentinelAware() ? createSentinelClient()
@@ -1444,6 +1521,135 @@ public class LettuceConnectionFactory implements RedisConnectionFactory, Reactiv
 		this.clientConfiguration.getClientOptions().ifPresent(redisClient::setOptions);
 
 		return redisClient;
+	}
+
+	/**
+	 * Creates a new {@link MultiDbClient} for client-side geographic failover (multi-database) from the given
+	 * {@link RedisMultiDbConfiguration}. The cross-driver {@link MultiDbClientOptions} are mapped onto the Lettuce
+	 * {@link MultiDbOptions} and each {@link MultiDbNode} onto a {@link DatabaseConfig}. The optional
+	 * {@link MultiDbOptionsBuilderCustomizer} and {@link DatabaseConfigBuilderCustomizer} are invoked last so users can
+	 * apply driver-native settings that have no cross-driver counterpart.
+	 *
+	 * @param configuration the multi-database configuration to use.
+	 * @return the {@link MultiDbClient} instance.
+	 * @since 4.0
+	 */
+	protected MultiDbClient createMultiDbClient(RedisMultiDbConfiguration configuration) {
+
+		MultiDbClientOptions options = configuration.getClientOptions();
+		List<MultiDbNode> nodes = configuration.getNodes();
+
+		Assert.notEmpty(nodes, "At least one MultiDbNode must be configured");
+
+		List<DatabaseConfig> databases = new ArrayList<>(nodes.size());
+		for (MultiDbNode node : nodes) {
+			databases.add(createDatabaseConfig(node, configuration, options));
+		}
+
+		MultiDbOptions.Builder optionsBuilder = MultiDbOptions.builder() //
+				.failbackSupported(options.isFailbackEnabled()) //
+				.failbackCheckInterval(options.getFailbackCheckInterval()) //
+				.gracePeriod(options.getGracePeriod()) //
+				.delayInBetweenFailoverAttempts(options.getDelayBetweenFailoverAttempts()) //
+				.initializationPolicy(toInitializationPolicy(options.getInitialDatabaseState()));
+
+		this.clientConfiguration.getMultiDbOptionsCustomizer()
+				.ifPresent(customizer -> customizer.customize(optionsBuilder));
+
+		MultiDbOptions multiDbOptions = optionsBuilder.build();
+
+		return this.clientConfiguration.getClientResources()
+				.map(resources -> MultiDbClient.create(resources, databases, multiDbOptions))
+				.orElseGet(() -> MultiDbClient.create(databases, multiDbOptions));
+	}
+
+	private DatabaseConfig createDatabaseConfig(MultiDbNode node, RedisMultiDbConfiguration configuration,
+			MultiDbClientOptions options) {
+
+		RedisURI redisURI = createMultiDbNodeRedisURI(node, configuration);
+
+		DatabaseConfig.Builder builder = DatabaseConfig.builder(redisURI) //
+				.weight(node.getWeightOrDefault()) //
+				.circuitBreakerConfig(createCircuitBreakerConfig(options));
+
+		if (options.isHealthCheckEnabled()) {
+			builder.healthCheckStrategySupplier(createHealthCheckStrategySupplier(options));
+		} else {
+			builder.healthCheckStrategySupplier(HealthCheckStrategySupplier.NO_HEALTH_CHECK);
+		}
+
+		this.clientConfiguration.getClientOptions().ifPresent(builder::clientOptions);
+
+		this.clientConfiguration.getDatabaseConfigCustomizer().ifPresent(customizer -> customizer.customize(node, builder));
+
+		return builder.build();
+	}
+
+	private RedisURI createMultiDbNodeRedisURI(MultiDbNode node, RedisMultiDbConfiguration configuration) {
+
+		RedisURI.Builder builder = RedisURI.Builder.redis(node.getHost(), node.getPort());
+
+		String username = node.getUsername() != null ? node.getUsername() : configuration.getUsername();
+		RedisPassword password = node.getPassword() != null ? node.getPassword() : configuration.getPassword();
+
+		if (StringUtils.hasText(username)) {
+			builder.withAuthentication(username, new String(password.toOptional().orElse(new char[0])));
+		} else {
+			password.toOptional().ifPresent(builder::withPassword);
+		}
+
+		this.clientConfiguration.getClientName().ifPresent(builder::withClientName);
+
+		builder.withDatabase(node.getDatabaseOrDefault(MultiDbNode.DEFAULT_DATABASE));
+		builder.withSsl(this.clientConfiguration.isUseSsl());
+		builder.withVerifyPeer(this.clientConfiguration.getVerifyMode());
+		builder.withStartTls(this.clientConfiguration.isStartTls());
+		builder.withTimeout(this.clientConfiguration.getCommandTimeout());
+
+		builder.withDriverInfo(DriverInfo.builder().addUpstreamDriver(RedisClientLibraryInfo.FRAMEWORK_NAME,
+				RedisClientLibraryInfo.getVersion()).build());
+
+		return builder.build();
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static CircuitBreakerConfig createCircuitBreakerConfig(MultiDbClientOptions options) {
+
+		return CircuitBreakerConfig.builder() //
+				.failureRateThreshold(options.getFailureRateThreshold()) //
+				.minimumNumberOfFailures(options.getMinimumNumberOfFailures()) //
+				.metricsWindowSize((int) options.getSlidingWindowSize().toSeconds()) //
+				.trackedExceptions((Set) options.getTrackedExceptions()) //
+				.build();
+	}
+
+	private static HealthCheckStrategySupplier createHealthCheckStrategySupplier(MultiDbClientOptions options) {
+
+		HealthCheckStrategy.Config config = HealthCheckStrategy.Config.builder() //
+				.interval((int) options.getHealthCheckInterval().toMillis()) //
+				.timeout((int) options.getHealthCheckTimeout().toMillis()) //
+				.numProbes(options.getHealthCheckNumberOfProbes()) //
+				.delayInBetweenProbes((int) options.getHealthCheckDelayBetweenProbes().toMillis()) //
+				.policy(toProbingPolicy(options.getHealthCheckPolicy())) //
+				.build();
+
+		return (redisURI, connectionFactory) -> new PingStrategy(connectionFactory, config);
+	}
+
+	private static InitializationPolicy toInitializationPolicy(MultiDbClientOptions.InitialDatabaseState state) {
+		return switch (state) {
+			case ALL_AVAILABLE -> InitializationPolicy.BuiltIn.ALL_AVAILABLE;
+			case MAJORITY_AVAILABLE -> InitializationPolicy.BuiltIn.MAJORITY_AVAILABLE;
+			case ONE_AVAILABLE -> InitializationPolicy.BuiltIn.ONE_AVAILABLE;
+		};
+	}
+
+	private static ProbingPolicy toProbingPolicy(MultiDbClientOptions.HealthCheckPolicy policy) {
+		return switch (policy) {
+			case ALL -> ProbingPolicy.BuiltIn.ALL_SUCCESS;
+			case MAJORITY -> ProbingPolicy.BuiltIn.MAJORITY_SUCCESS;
+			case ANY -> ProbingPolicy.BuiltIn.ANY_SUCCESS;
+		};
 	}
 
 	@SuppressWarnings("NullAway")

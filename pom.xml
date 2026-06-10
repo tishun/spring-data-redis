@@ -25,6 +25,7 @@
 		<pool>2.13.1</pool>
 		<lettuce>7.5.2.RELEASE</lettuce>
 		<jedis>7.4.1</jedis>
+		<resilience4j>1.7.1</resilience4j>
 		<multithreadedtc>1.01</multithreadedtc>
 		<netty>4.2.10.Final</netty>
 		<java-module-name>spring.data.redis</java-module-name>
@@ -105,6 +106,14 @@
 			<groupId>redis.clients</groupId>
 			<artifactId>jedis</artifactId>
 			<version>${jedis}</version>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- Required by the Jedis multi-database (client-side geographic failover) circuit breaker / retry / decorators -->
+		<dependency>
+			<groupId>io.github.resilience4j</groupId>
+			<artifactId>resilience4j-all</artifactId>
+			<version>${resilience4j}</version>
 			<optional>true</optional>
 		</dependency>
 

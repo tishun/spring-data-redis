@@ -129,6 +129,26 @@ public interface LettuceClientConfiguration {
 	Duration getShutdownQuietPeriod();
 
 	/**
+	 * @return the optional {@link MultiDbOptionsBuilderCustomizer} applied to the global
+	 *         {@link io.lettuce.core.failover.api.MultiDbOptions.Builder} when a
+	 *         {@link org.springframework.data.redis.connection.RedisMultiDbConfiguration} is in use.
+	 * @since 4.0
+	 */
+	default Optional<MultiDbOptionsBuilderCustomizer> getMultiDbOptionsCustomizer() {
+		return Optional.empty();
+	}
+
+	/**
+	 * @return the optional {@link DatabaseConfigBuilderCustomizer} applied to the per-node
+	 *         {@link io.lettuce.core.failover.api.DatabaseConfig.Builder} when a
+	 *         {@link org.springframework.data.redis.connection.RedisMultiDbConfiguration} is in use.
+	 * @since 4.0
+	 */
+	default Optional<DatabaseConfigBuilderCustomizer> getDatabaseConfigCustomizer() {
+		return Optional.empty();
+	}
+
+	/**
 	 * Creates a new {@link LettuceClientConfigurationBuilder} to build {@link LettuceClientConfiguration} to be used with
 	 * the Lettuce client.
 	 *
@@ -186,6 +206,8 @@ public interface LettuceClientConfiguration {
 		Duration timeout = Duration.ofSeconds(RedisURI.DEFAULT_TIMEOUT);
 		Duration shutdownTimeout = Duration.ofMillis(100);
 		Duration shutdownQuietPeriod = Duration.ZERO;
+		@Nullable MultiDbOptionsBuilderCustomizer multiDbOptionsCustomizer;
+		@Nullable DatabaseConfigBuilderCustomizer databaseConfigCustomizer;
 
 		LettuceClientConfigurationBuilder() {}
 
@@ -351,6 +373,40 @@ public interface LettuceClientConfiguration {
 		}
 
 		/**
+		 * Configure a {@link MultiDbOptionsBuilderCustomizer} applied to the global
+		 * {@link io.lettuce.core.failover.api.MultiDbOptions.Builder} when a
+		 * {@link org.springframework.data.redis.connection.RedisMultiDbConfiguration} is in use.
+		 *
+		 * @param customizer must not be {@literal null}.
+		 * @return {@literal this} builder.
+		 * @since 4.0
+		 */
+		public LettuceClientConfigurationBuilder customizeMultiDbOptions(MultiDbOptionsBuilderCustomizer customizer) {
+
+			Assert.notNull(customizer, "MultiDbOptionsBuilderCustomizer must not be null");
+
+			this.multiDbOptionsCustomizer = customizer;
+			return this;
+		}
+
+		/**
+		 * Configure a {@link DatabaseConfigBuilderCustomizer} applied to the per-node
+		 * {@link io.lettuce.core.failover.api.DatabaseConfig.Builder} when a
+		 * {@link org.springframework.data.redis.connection.RedisMultiDbConfiguration} is in use.
+		 *
+		 * @param customizer must not be {@literal null}.
+		 * @return {@literal this} builder.
+		 * @since 4.0
+		 */
+		public LettuceClientConfigurationBuilder customizeDatabaseConfig(DatabaseConfigBuilderCustomizer customizer) {
+
+			Assert.notNull(customizer, "DatabaseConfigBuilderCustomizer must not be null");
+
+			this.databaseConfigCustomizer = customizer;
+			return this;
+		}
+
+		/**
 		 * Build the {@link LettuceClientConfiguration} with the configuration applied from this builder.
 		 *
 		 * @return a new {@link LettuceClientConfiguration} object.
@@ -358,7 +414,8 @@ public interface LettuceClientConfiguration {
 		public LettuceClientConfiguration build() {
 
 			return new DefaultLettuceClientConfiguration(useSsl, verifyMode, startTls, clientResources, clientOptions,
-					clientName, readFrom, redisCredentialsProviderFactory, timeout, shutdownTimeout, shutdownQuietPeriod);
+					clientName, readFrom, redisCredentialsProviderFactory, timeout, shutdownTimeout, shutdownQuietPeriod,
+					multiDbOptionsCustomizer, databaseConfigCustomizer);
 		}
 	}
 
